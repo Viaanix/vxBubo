@@ -1,5 +1,5 @@
 {
-  "name": "vxBubo",
+  "name": "vx-bubo",
   "version": "0.0.1",
   "description": "Your guide to develop Thingsboard Widgets locally",
   "type": "module",
@@ -16,8 +16,6 @@
   },
   "homepage": "https://github.com/Viaanix/vxBubo#readme",
   "scripts": {
-    "push-widget": "node index.js --push",
-    "get-widget": "node index.js --get",
     "lint": "eslint --ext .js src/",
     "lint-fix": "eslint --ext .js --fix src/",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -27,10 +25,8 @@
     "chalk": "^5.3.0",
     "clipboardy": "^4.0.0",
     "commander": "^11.1.0",
-    "dotenv": "^16.3.1",
     "eslint": "^8.53.0",
     "eslint-config-standard": "^17.1.0",
-    "node-localstorage": "^3.0.5",
-    "prompts": "^2.4.2"
+    "node-localstorage": "^3.0.5"
   }
 }

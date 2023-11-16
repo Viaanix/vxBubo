@@ -1,5 +1,5 @@
 # Bubo
-![alt text](https://legendary-digital-network-assets.s3.amazonaws.com/wp-content/uploads/2021/11/12201443/Bubo-the-Owl-life-size-figure-standing.jpg)
+![alt text](https://media.tenor.com/rhPTpks6lOoAAAAd/bubo-clockwork.gif)
 
 
 
