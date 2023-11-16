@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt.js';
-import { getActiveWidget, getToken, validToken } from './src/utils.js';
-import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.js';
+import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt';
+import { getActiveWidget, getToken, validToken } from './src/utils';
+import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package';
 
 const program = new Command();
 program
-  .name('bubo')
+  .name('vx-bubo')
   .description('Your guide to develop Thingsboard Widgets locally')
   .option('-h, --host <url>', 'ThingsBoard URL you wish to connect to if you opt to not set an env variable')
   .option('-w, --widget <widiget-id>', 'specify the widget you would like to work with')

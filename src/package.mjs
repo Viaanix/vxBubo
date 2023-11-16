@@ -12,12 +12,13 @@ import {
   getWidgetDevPaths,
   getWidgetLocal,
   validatePath
-} from './utils.js';
+} from './utils';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const __dirname = process.cwd();
+// const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const rootProjectPath = path.join(__dirname, '../');
 const localWidgetPath = path.join(rootProjectPath, 'widgets');
-const scratchPath = path.join(rootProjectPath, '.scratch');
+const scratchPath = path.join(rootProjectPath, '.bubo');
 
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {

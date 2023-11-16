@@ -1,7 +1,7 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import localStorage from './session.js';
-import { getActiveWidget, getHost, validToken } from './utils.js';
+import localStorage from './session';
+import { getActiveWidget, getHost, validToken } from './utils';
 
 export const promptMenu = async () => {
   const disableToken = await validToken() === false;

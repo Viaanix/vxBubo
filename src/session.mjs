@@ -1,6 +1,6 @@
 import { LocalStorage } from 'node-localstorage';
 
-const localStorage = new LocalStorage('./.scratch');
+const localStorage = new LocalStorage('./.bubo');
 
 // export const getToken = async () => {
 //   return localStorage.getItem('token');

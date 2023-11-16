@@ -4,7 +4,7 @@
 
 
 ```bash
-bubo
+vx-bubo
 ```
 
 ```bash
