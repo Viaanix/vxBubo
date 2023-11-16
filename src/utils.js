@@ -1,13 +1,16 @@
 import path from 'path';
 import fs from 'fs';
 import localStorage from './session.js';
-import 'dotenv/config';
 
-export const getToken = async () => {
+export const getHost = () => {
+  return localStorage.getItem('host');
+};
+
+export const getToken = () => {
   return localStorage.getItem('token');
 };
 
-export const getActiveWidget = async () => {
+export const getActiveWidget = () => {
   return localStorage.getItem('widgetId');
 };
 
@@ -20,9 +23,13 @@ export const authFetch = async (url, token) => {
   return fetch(url, { ...authHeader });
 };
 
-export const testToken = async (token) => {
-  if (!token) return false;
-  const apiUrl = `${process.env.THINGSBOARD_URL}/api/auth/user`;
+export const validToken = async (token) => {
+  token = token || getToken();
+  if (!token || !getHost()) {
+    console.log('No Token');
+    return false;
+  }
+  const apiUrl = `${getHost()}/api/auth/user`;
   const request = await authFetch(apiUrl, token);
   const response = await request.json();
   if (request.status !== 200) {
@@ -73,6 +80,8 @@ export const getWidgetDevPaths = async (widgetPath, alias) => {
   return {
     css: path.join(widgetPath, `${alias}.css`),
     html: path.join(widgetPath, `${alias}.html`),
-    js: path.join(widgetPath, `${alias}.js`)
+    js: path.join(widgetPath, `${alias}.js`),
+    settingsSchema: path.join(widgetPath, `${alias}.SETTINGS_SCHEMA.json`),
+    dataKeySettingsSchema: path.join(widgetPath, `${alias}.SETTINGS_SCHEMA.json`)
   };
 };

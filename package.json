@@ -1,16 +1,10 @@
 {
-  "name": "vxthingsboardlocalwidgetdev",
+  "name": "Bubo",
   "version": "0.0.1",
-  "description": "Edit Thingsboard Widgets localy ",
-  "main": "index.js",
+  "description": "Edit Thingsboard Widgets locally ",
   "type": "module",
-  "scripts": {
-    "push-widget": "node index.js --push",
-    "get-widget": "node index.js --get",
-    "lint": "eslint --ext .js src/",
-    "lint-fix": "eslint --ext .js --fix src/",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "index.js",
+  "bin": "./index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Viaanix/vxThingsBoardLocalWidgetDev.git"
@@ -21,7 +15,16 @@
     "url": "https://github.com/Viaanix/vxThingsBoardLocalWidgetDev/issues"
   },
   "homepage": "https://github.com/Viaanix/vxThingsBoardLocalWidgetDev#readme",
+  "scripts": {
+    "push-widget": "node index.js --push",
+    "get-widget": "node index.js --get",
+    "lint": "eslint --ext .js src/",
+    "lint-fix": "eslint --ext .js --fix src/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
+    "@inquirer/prompts": "^3.3.0",
+    "chalk": "^5.3.0",
     "clipboardy": "^4.0.0",
     "commander": "^11.1.0",
     "dotenv": "^16.3.1",

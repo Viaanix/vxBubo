@@ -6,13 +6,13 @@ import {
   authFetch,
   createFile,
   formatJson,
+  getHost,
   getLocalFile,
   getToken,
   getWidgetDevPaths,
   getWidgetLocal,
   validatePath
 } from './utils.js';
-import 'dotenv/config';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const rootProjectPath = path.join(__dirname, '../');
@@ -32,7 +32,7 @@ export const fetchAndSaveRemoteWidget = async (widgetId) => {
     throw new Error('Specify a widgetId');
   }
 
-  const apiUrl = `${process.env.THINGSBOARD_URL}/api/widgetType/${widgetId}`;
+  const apiUrl = `${getHost()}/api/widgetType/${widgetId}`;
   const request = await authFetch(apiUrl);
 
   if (request.ok) {
@@ -80,7 +80,7 @@ export const publishLocalWidget = async (widgetId) => {
 
   widgetJson = formatJson(widgetJson);
 
-  const url = `${process.env.THINGSBOARD_URL}/api/widgetType`;
+  const url = `${getHost()}/api/widgetType`;
   const params = {
     headers: {
       Authorization: await getToken(),
@@ -91,7 +91,7 @@ export const publishLocalWidget = async (widgetId) => {
     body: widgetJson
   };
   const request = await fetch(url, { ...params });
-  const response = await request.json();
+  await request.json();
 
   // Backup current widget
   fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
