@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt';
-import { getActiveWidget, getToken, validToken } from './src/utils';
-import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package';
+import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt.mjs';
+import { getActiveWidget, getToken, validToken } from './src/utils.mjs';
+import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.mjs';
 
 const program = new Command();
 program
