@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage from './session.js';
+import localStorage from './session.mjs';
 
 export const getHost = () => {
   return localStorage.getItem('host');

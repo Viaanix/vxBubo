@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'node:fs';
 import { finished } from 'stream/promises';
-import { fileURLToPath } from 'url';
+// import { fileURLToPath } from 'url';
 import {
   authFetch,
   createFile,
@@ -12,7 +12,7 @@ import {
   getWidgetDevPaths,
   getWidgetLocal,
   validatePath
-} from './utils';
+} from './utils.mjs';
 
 const __dirname = process.cwd();
 // const __dirname = fileURLToPath(new URL('.', import.meta.url));
