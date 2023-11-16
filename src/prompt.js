@@ -7,7 +7,7 @@ export const promptMenu = async () => {
   const disableToken = await validToken() === false;
   const disableHost = getHost() === null;
   const disableWidget = getActiveWidget() === null;
-  console.log('disableToken =>', disableToken, 'disableHost =>', disableHost, 'disableWidget=>', disableWidget);
+
   const answer = await select({
     message: 'What would you like to do?',
     choices: [

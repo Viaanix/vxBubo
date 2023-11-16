@@ -8,7 +8,7 @@ import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from 
 const program = new Command();
 program
   .name('bubo')
-  .description('CLI to some JavaScript string utilities')
+  .description('Your guide to develop Thingsboard Widgets locally')
   .option('-h, --host <url>', 'ThingsBoard URL you wish to connect to if you opt to not set an env variable')
   .option('-w, --widget <widiget-id>', 'specify the widget you would like to work with')
   // .option('-b, --bundle', 'Bundle local widget')
@@ -18,7 +18,6 @@ program
 
 program.parse();
 const options = program.opts();
-console.log('options =>', options);
 
 // No option selected, show main menu
 if (Object.keys(options).length === 0) {

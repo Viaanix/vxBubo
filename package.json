@@ -1,20 +1,20 @@
 {
-  "name": "Bubo",
+  "name": "vxBubo",
   "version": "0.0.1",
-  "description": "Edit Thingsboard Widgets locally ",
+  "description": "Your guide to develop Thingsboard Widgets locally",
   "type": "module",
   "main": "index.js",
   "bin": "./index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Viaanix/vxThingsBoardLocalWidgetDev.git"
+    "url": "git+https://github.com/Viaanix/vxBubo.git"
   },
   "author": "Daniel Zenner",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Viaanix/vxThingsBoardLocalWidgetDev/issues"
+    "url": "https://github.com/Viaanix/vxBubo/issues"
   },
-  "homepage": "https://github.com/Viaanix/vxThingsBoardLocalWidgetDev#readme",
+  "homepage": "https://github.com/Viaanix/vxBubo#readme",
   "scripts": {
     "push-widget": "node index.js --push",
     "get-widget": "node index.js --get",
