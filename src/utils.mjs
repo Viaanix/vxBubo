@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getHost, getToken } from './session.mjs';
+import localStorage, { getToken } from './session.mjs';
+import { tbHost } from '../index.mjs';
 
 export const authFetch = async (url, token) => {
   const authHeader = {
@@ -14,11 +15,11 @@ export const authFetch = async (url, token) => {
 // TODO: rename
 export const validToken = async (token) => {
   token = token || getToken();
-  if (!token || !getHost()) {
-    console.log('No Token');
+  if (!token || !tbHost()) {
+    // console.debug('No Token');
     return false;
   }
-  const apiUrl = `${getHost()}/api/auth/user`;
+  const apiUrl = `${tbHost()}/api/auth/user`;
   const request = await authFetch(apiUrl, token);
   const response = await request.json();
   if (request.status !== 200) {
@@ -73,7 +74,7 @@ export const getLocalFile = async (filePath) => {
 };
 
 export const getWidgetRemote = async (widgetId) => {
-  const apiUrl = `${getHost()}/api/widgetType/${widgetId}`;
+  const apiUrl = `${tbHost()}/api/widgetType/${widgetId}`;
   return await authFetch(apiUrl);
 };
 

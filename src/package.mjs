@@ -11,11 +11,8 @@ import {
   getWidgetRemote,
   validatePath
 } from './utils.mjs';
-import { getHost, getToken } from './session.mjs';
-
-const rootProjectPath = process.cwd();
-const localWidgetPath = path.join(rootProjectPath, 'widgets');
-const scratchPath = path.join(rootProjectPath, '.bubo');
+import { getToken } from './session.mjs';
+import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
 
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {
@@ -79,7 +76,7 @@ export const publishLocalWidget = async (widgetId) => {
 
   // await createFile(path.join(widgetPath, 'test.json'), widgetJson);
 
-  const url = `${getHost()}/api/widgetType`;
+  const url = `${tbHost()}/api/widgetType`;
   const params = {
     headers: {
       Authorization: getToken(),
