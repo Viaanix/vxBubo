@@ -2,8 +2,9 @@
 
 import { Command } from 'commander';
 import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt.mjs';
-import { getActiveWidget, getToken, validToken } from './src/utils.mjs';
+import { validToken } from './src/utils.mjs';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.mjs';
+import { getToken, getActiveWidget } from './src/session.mjs';
 
 const program = new Command();
 program
