@@ -35,13 +35,13 @@ export const promptMenu = async () => {
         value: 'push',
         description: 'PUSH active widget',
         disabled: (disableHost || disableToken || disableWidget)
-      },
+      }
       {
-        name: 'push multiple',
-        value: 'pushMultiple',
-        description: 'PUSH Multiple Widgets',
-        disabled: (disableHost || disableToken)
-      },
+      //   name: 'push multiple',
+      //   value: 'pushMultiple',
+      //   description: 'PUSH Multiple Widgets',
+      //   disabled: (disableHost || disableToken)
+      // },
       // {
       //   name: 'bundle',
       //   value: 'bundle',

@@ -22,7 +22,6 @@ const program = new Command();
 program
   .name('vx-bubo')
   .description('Your guide to develop Thingsboard Widgets locally')
-  .option('-h, --host <url>', 'ThingsBoard URL you wish to connect to if you opt to not set an env variable')
   .option('-w, --widget <widiget-id>', 'specify the widget you would like to work with')
   // .option('-b, --bundle', 'Bundle local widget')
   .option('-g, --get', 'GET widget from ThingsBoard')
