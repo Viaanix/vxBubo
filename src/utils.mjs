@@ -1,18 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage from './session.mjs';
-
-export const getHost = () => {
-  return localStorage.getItem('host');
-};
-
-export const getToken = () => {
-  return localStorage.getItem('token');
-};
-
-export const getActiveWidget = () => {
-  return localStorage.getItem('widgetId');
-};
+import localStorage, { getHost, getToken } from './session.mjs';
 
 export const authFetch = async (url, token) => {
   const authHeader = {
@@ -23,6 +11,7 @@ export const authFetch = async (url, token) => {
   return fetch(url, { ...authHeader });
 };
 
+// TODO: rename
 export const validToken = async (token) => {
   token = token || getToken();
   if (!token || !getHost()) {
@@ -34,6 +23,7 @@ export const validToken = async (token) => {
   const response = await request.json();
   if (request.status !== 200) {
     console.log('testToken Failed =>', request.status, response.message);
+    // TODO: Abstract this away, no localStorage direct calls
     // Remove token if failed/expired
     localStorage.removeItem('token');
     return false;
@@ -42,17 +32,28 @@ export const validToken = async (token) => {
 };
 
 export const formatJson = (data) => {
-  return JSON.stringify(data, null, 4);
+  return JSON.stringify(data, null, 2);
 };
 
+// =============================
+// Filesystem Utils
+// =============================
+
+export const checkPath = async (dir) => {
+  return fs.existsSync(dir);
+};
+
+// TODO: Update name
 export const validatePath = async (dirname) => {
-  if (!fs.existsSync(dirname)) {
-    console.log(`Cannot find ${dirname}, creating it.`);
-    await fs.mkdirSync(dirname, { recursive: true });
+  if (!await checkPath(dirname)) {
+    fs.mkdirSync(dirname, { recursive: true });
+    console.debug(`Cannot find ${dirname}, creating it.`);
   }
 };
 
 export const createFile = async (filePath, data) => {
+  // Validate path before creating a file
+  await validatePath(path.dirname(filePath));
   try {
     fs.writeFileSync(filePath, data);
   } catch (error) {
@@ -60,10 +61,10 @@ export const createFile = async (filePath, data) => {
   }
 };
 
-export const getLocalFile = async (path) => {
+export const getLocalFile = async (filePath) => {
   let fileRaw;
   try {
-    fileRaw = await fs.readFileSync(path, 'utf8');
+    fileRaw = await fs.readFileSync(filePath, 'utf8');
   } catch (error) {
     console.error(error);
     throw new Error(error);
@@ -71,17 +72,12 @@ export const getLocalFile = async (path) => {
   return fileRaw;
 };
 
+export const getWidgetRemote = async (widgetId) => {
+  const apiUrl = `${getHost()}/api/widgetType/${widgetId}`;
+  return await authFetch(apiUrl);
+};
+
 export const getWidgetLocal = async (widgetPath) => {
   const widgetJsonRaw = await getLocalFile(widgetPath);
   return JSON.parse(widgetJsonRaw);
-};
-
-export const getWidgetDevPaths = async (widgetPath, alias) => {
-  return {
-    css: path.join(widgetPath, `${alias}.css`),
-    html: path.join(widgetPath, `${alias}.html`),
-    js: path.join(widgetPath, `${alias}.js`),
-    settingsSchema: path.join(widgetPath, `${alias}.SETTINGS_SCHEMA.json`),
-    dataKeySettingsSchema: path.join(widgetPath, `${alias}.SETTINGS_SCHEMA.json`)
-  };
 };
