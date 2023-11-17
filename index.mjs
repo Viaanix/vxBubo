@@ -1,11 +1,23 @@
 #!/usr/bin/env node
-
 import { Command } from 'commander';
-import { prompForToken, promptWidgetId, promptMenu, prompForHost, promptPublishLocalWidgets } from './src/prompt.mjs';
+import { prompForToken, promptWidgetId, promptMenu, promptPublishLocalWidgets } from './src/prompt.mjs';
 import { validToken } from './src/utils.mjs';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.mjs';
 import { getToken, getActiveWidget } from './src/session.mjs';
+import path from 'path';
+import { cosmiconfig } from 'cosmiconfig';
 
+const rootProjectPath = process.cwd();
+const explorer = await cosmiconfig('bubo', { sync: true, searchPlaces: ['bubo.config.json'] }).search();
+
+export const localWidgetPath = path.join(rootProjectPath, explorer.config.widgetWorkingDirectory);
+export const scratchPath = path.join(rootProjectPath, '.bubo');
+
+export const tbHost = () => {
+  return explorer.config.thingsBoardHost.trim().replace(/\/+$/g, '');
+};
+
+// Go!
 const program = new Command();
 program
   .name('vx-bubo')
@@ -22,11 +34,6 @@ const options = program.opts();
 
 // No option selected, show main menu
 if (Object.keys(options).length === 0) {
-  await showMainMenu();
-}
-
-if (options.host) {
-  await prompForHost();
   await showMainMenu();
 }
 

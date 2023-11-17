@@ -23,3 +23,13 @@ Options:
   --help                     display help for command
 ```
 
+
+## Configure
+
+1) Create a file in the root of your project named `bubo.config.js` with the following:
+```json
+{
+  "thingsBoardHost": "http://127.0.0.1:8080",
+  "widgetWorkingDirectory": "widgets"
+}
+```

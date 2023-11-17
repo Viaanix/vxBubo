@@ -1,21 +1,17 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
 import { validToken } from './utils.mjs';
-import localStorage, { getHost, getActiveWidget } from './session.mjs';
+import localStorage, { getActiveWidget } from './session.mjs';
+import { tbHost } from '../index.mjs';
 
 export const promptMenu = async () => {
   const disableToken = await validToken() === false;
-  const disableHost = getHost() === null;
+  const disableHost = tbHost() === null;
   const disableWidget = getActiveWidget() === null;
 
   const answer = await select({
     message: 'What would you like to do?',
     choices: [
-      {
-        name: 'set host',
-        value: 'host',
-        description: 'Specify the ThingsBoard URL you wish to work with'
-      },
       {
         name: 'set token',
         value: 'token',
@@ -27,11 +23,6 @@ export const promptMenu = async () => {
         value: 'widget',
         description: 'specify the widget you would like to work with',
         disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'clean',
-        value: 'clean',
-        description: 'Clean local data such as host, token and widget id'
       },
       {
         name: 'get',
@@ -50,40 +41,45 @@ export const promptMenu = async () => {
         value: 'pushMultiple',
         description: 'PUSH Multiple Widgets',
         disabled: (disableHost || disableToken)
-      }
+      },
       // {
       //   name: 'bundle',
       //   value: 'bundle',
       //   description: 'Bundle local widget for install'
       // },
+      {
+        name: 'clean',
+        value: 'clean',
+        description: 'Clean local data such as host, token and widget id'
+      }
     ]
   });
 
   return answer;
 };
 
-export const prompForHost = async () => {
-  const answer = await input({
-    message: 'What is the url for the ThingsBoard instance you would like to work with?'
-  });
-
-  const urlClean = answer.trim().replace(/\/+$/g, '');
-
-  // TODO: Test URL
-  try {
-    new URL(urlClean);
-    localStorage.setItem('host', urlClean);
-    return localStorage.getItem('host');
-  } catch {
-    const message = `ThingsBoard host ${urlClean} is not valid.`;
-    console.log(message);
-    throw new Error(message);
-  }
-};
+// export const prompForHost = async () => {
+//   const answer = await input({
+//     message: 'What is the url for the ThingsBoard instance you would like to work with?'
+//   });
+//
+//   const urlClean = answer.trim().replace(/\/+$/g, '');
+//
+//   // TODO: Test URL
+//   try {
+//     new URL(urlClean);
+//     localStorage.setItem('host', urlClean);
+//     return localStorage.getItem('host');
+//   } catch {
+//     const message = `ThingsBoard host ${urlClean} is not valid.`;
+//     console.log(message);
+//     throw new Error(message);
+//   }
+// };
 
 export const prompForToken = async () => {
   await confirm({
-    message: `Login to ThingsBoard click => ${getHost()}/security then press "Copy JWT token". Finished?`
+    message: `Login to ThingsBoard click => ${tbHost()}/security then press "Copy JWT token". Finished?`
   });
 
   const clip = clipboard.readSync();
