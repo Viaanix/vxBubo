@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { prompForToken, promptWidgetId, promptMenu, promptPublishLocalWidgets } from './src/prompt.mjs';
-import { validToken } from './src/utils.mjs';
+import { refreshToken, validToken } from './src/utils.mjs';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.mjs';
 import { getToken, getActiveWidget } from './src/session.mjs';
 import path from 'path';
@@ -38,7 +38,7 @@ if (Object.keys(options).length === 0) {
 
 if (options.token) {
   await prompForToken();
-  await showMainMenu();
+  await refreshToken();
 }
 
 // Check for a token to continue
@@ -49,12 +49,12 @@ if (!getToken() || !validToken()) {
 
 if (options.widget) {
   await promptWidgetId();
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 if (options.pushMultiple) {
   await promptPublishLocalWidgets();
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 let widgetId = await getActiveWidget();
@@ -69,13 +69,13 @@ if (options.get) {
   // Parse Widget Export for local development
   await parseWidgetExport(widgetId);
   console.log(`Widget ${widgetId} has been downloaded and ready to develop`);
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 // Publish Local Widget?
 if (options.push) {
   await publishLocalWidget(widgetId);
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 async function showMainMenu () {

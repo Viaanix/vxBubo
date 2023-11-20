@@ -1,7 +1,11 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getToken } from './session.mjs';
+import localStorage, { getRefreshToken, getToken } from './session.mjs';
 import { tbHost } from '../index.mjs';
+
+export const parseJwt = (token) => {
+  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+};
 
 export const authFetch = async (url, token) => {
   const authHeader = {
@@ -10,6 +14,39 @@ export const authFetch = async (url, token) => {
     }
   };
   return fetch(url, { ...authHeader });
+};
+
+export const refreshToken = async () => {
+  const authHeader = {
+    headers: {
+      Authorization: await getToken(),
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify({
+      refreshToken: getRefreshToken()
+    })
+  };
+  const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeader });
+  const response = await request.json();
+  if (response.token) {
+    localStorage.setItem('token', response.refreshToken);
+  }
+  if (response.refreshToken) {
+    localStorage.setItem('refreshToken', response.refreshToken);
+  }
+  console.log('refreshToken => ', response);
+};
+
+export const getUserRefreshToken = async () => {
+  const tokenRaw = getToken().replace('Bearer', '').trim();
+  const parsedJWT = parseJwt(tokenRaw);
+  const tokenRequest = await authFetch(`${tbHost()}/api/user/${parsedJWT.userId}/token`, getToken());
+  const tokenResponse = await tokenRequest.json();
+  if (tokenResponse.refreshToken) {
+    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
+  }
 };
 
 // TODO: rename

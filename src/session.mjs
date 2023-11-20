@@ -6,6 +6,10 @@ export const getToken = () => {
   return localStorage.getItem('token');
 };
 
+export const getRefreshToken = () => {
+  return localStorage.getItem('refreshToken');
+};
+
 export const getActiveWidget = () => {
   return localStorage.getItem('widgetId');
 };

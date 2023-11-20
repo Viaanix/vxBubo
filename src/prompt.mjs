@@ -1,6 +1,6 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import { validToken } from './utils.mjs';
+import { getUserRefreshToken, validToken } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
 import { tbHost } from '../index.mjs';
 
@@ -86,6 +86,7 @@ export const prompForToken = async () => {
   try {
     await validToken(clip);
     localStorage.setItem('token', clip);
+    await getUserRefreshToken();
     return localStorage.getItem('token');
   } catch {
     const message = 'Token is not valid.';
