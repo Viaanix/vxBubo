@@ -1,24 +1,21 @@
 import path from 'path';
 import fs from 'node:fs';
 import { finished } from 'stream/promises';
-
 import {
   checkPath,
   createFile,
   formatJson,
   getLocalFile,
   getWidgetLocal,
-  getWidgetRemote,
-  validatePath
+  validatePath,
+  fetchHandler
 } from './utils.mjs';
-import { getToken } from './session.mjs';
 import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
 
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
-
   return path.join(scratchPath, 'widgets', `${widgetId}.json`);
 };
 
@@ -26,7 +23,8 @@ export const fetchAndSaveRemoteWidget = async (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
-  const request = await getWidgetRemote(widgetId);
+
+  const request = await fetchHandler(`${tbHost()}/api/widgetType/${widgetId}`);
 
   if (request.ok) {
     await validatePath(path.join(scratchPath, 'widgets'));
@@ -76,18 +74,15 @@ export const publishLocalWidget = async (widgetId) => {
 
   // await createFile(path.join(widgetPath, 'test.json'), widgetJson);
 
-  const url = `${tbHost()}/api/widgetType`;
   const params = {
     headers: {
-      Authorization: getToken(),
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
     method: 'POST',
     body: widgetJson
   };
-  const request = await fetch(url, { ...params });
-  await request.json();
+  await fetchHandler(`${tbHost()}/api/auth/token`, params);
 
   // Backup current widget
   fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
@@ -138,6 +133,10 @@ const actionWriteMap = [
   {
     extension: 'css',
     property: 'customCss'
+  },
+  {
+    extension: 'js',
+    property: 'showWidgetActionFunction'
   }
 ];
 

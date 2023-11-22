@@ -38,7 +38,7 @@ if (Object.keys(options).length === 0) {
 
 if (options.token) {
   await prompForToken();
-  await refreshToken();
+  // await refreshToken();
 }
 
 // Check for a token to continue
