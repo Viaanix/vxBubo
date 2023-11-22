@@ -85,6 +85,7 @@ export const prompForToken = async () => {
   const clip = clipboard.readSync();
   try {
     const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
+    console.log('prompForToken =>', token);
     await validToken(token);
     localStorage.setItem('token', token);
     await getUserRefreshToken();

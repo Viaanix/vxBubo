@@ -14,7 +14,7 @@ export const authHeaders = (token) => {
 export const fetchHandler = async (url, params) => {
   // Check if the token is expired or will expire soon refresh token.
   if (isTokenExpired()) {
-    console.log('Token is expired, refreshing..');
+    console.log('Token is expired, refreshing..', isTokenExpired());
     await refreshToken();
   }
   return await fetch(url, { ...authHeaders(), ...params });
@@ -33,11 +33,11 @@ const getParsedToken = (token) => {
   return parseJwt(token.replace('Bearer', '').trim());
 };
 
-export const isTokenExpired = async () => {
+export const isTokenExpired = () => {
   const parsedToken = getParsedToken();
   // Fudge factor, will it expire in 5 minutes ?
-  const fudge = 5 * 60 * 1000;
-  return parsedToken.exp > (Date.now() - fudge);
+  const fudge = 5 * 60;
+  return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
 };
 
 export const refreshToken = async () => {
@@ -54,7 +54,7 @@ export const refreshToken = async () => {
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeaders(), ...params });
   const response = await request.json();
   if (response.token) {
-    localStorage.setItem('token', `BearerBearer ${response.token}`);
+    localStorage.setItem('token', `Bearer ${response.token}`);
   }
   if (response.refreshToken) {
     localStorage.setItem('refreshToken', response.refreshToken);
