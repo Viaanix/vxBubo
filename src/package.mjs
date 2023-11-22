@@ -159,7 +159,7 @@ const processActions = async (widgetJson, output) => {
           // Create widget action resources
           actionWriteMap.map(async (a) => {
             const actionFileName = `${a.property}.${a.extension}`;
-            const actionFilePath = path.join(widgetPath, actionFileName);
+            const actionFilePath = path.join(actionPath, actionFileName);
             if (isWrite) {
               if (!action[a.property]) return;
               await createFile(path.join(actionPath, actionFileName), action[a.property]);
