@@ -14,7 +14,7 @@ export const authHeaders = (token) => {
 export const fetchHandler = async (url, params) => {
   // Check if the token is expired or will expire soon refresh token.
   if (isTokenExpired()) {
-    console.log('Token is expired, refreshing..', isTokenExpired());
+    console.log('Token is expired, refreshing..');
     await refreshToken();
   }
   return await fetch(url, { ...authHeaders(), ...params });
