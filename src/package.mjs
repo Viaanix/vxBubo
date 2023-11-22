@@ -159,10 +159,11 @@ const processActions = async (widgetJson, output) => {
           // Create widget action resources
           actionWriteMap.map(async (a) => {
             const actionFileName = `${a.property}.${a.extension}`;
+            const actionPath = path.join(actionPath, actionFileName);
             if (isWrite) {
               if (!action[a.property]) return;
               await createFile(path.join(actionPath, actionFileName), action[a.property]);
-            } else if (isBundle) {
+            } else if (isBundle && await checkPath(actionPath)) {
               action[a.property] = await getLocalFile(path.join(actionPath, actionFileName));
             }
           });
