@@ -17,6 +17,12 @@ export const fetchHandler = async (url, params) => {
     console.log('Token is expired, refreshing..');
     await refreshToken();
   }
+  //
+  // const auth = authHeaders();
+  // params.headers = {...auth.headers,...params?.headers}
+  // console.log(`fetchHandler => `, params.headers)
+  // return await fetch(url, {...params });
+
   return await fetch(url, { ...authHeaders(), ...params });
 };
 
@@ -123,7 +129,7 @@ export const createFile = async (filePath, data) => {
 export const getLocalFile = async (filePath) => {
   let fileRaw;
   try {
-    fileRaw = await fs.readFileSync(filePath, 'utf8');
+    fileRaw = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
     console.error(error);
     throw new Error(error);

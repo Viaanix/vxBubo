@@ -70,6 +70,8 @@ export const publishLocalWidget = async (widgetId) => {
     widgetJson.descriptor.defaultConfig = JSON.stringify(await processActions(widgetJson, outputAction));
   }
 
+  // const widgetPath = path.join(localWidgetPath, widgetJson.name);
+  // const widgetTestFile = path.join(widgetPath, 'test.json')
   widgetJson = formatJson(widgetJson);
 
   // await createFile(path.join(widgetPath, 'test.json'), widgetJson);
@@ -82,7 +84,9 @@ export const publishLocalWidget = async (widgetId) => {
     method: 'POST',
     body: widgetJson
   };
-  await fetchHandler(`${tbHost()}/api/auth/token`, params);
+  const request = await fetchHandler(`${tbHost()}/api/widgetType`, params);
+  // const response = await request.json();
+  // console.log(response);
 
   // Backup current widget
   fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
