@@ -117,11 +117,6 @@ const resourcesWriteMap = [
     extension: 'json',
     property: 'dataKeySettingsSchema',
     name: 'dataKeySettingsSchema'
-  },
-  {
-    extension: 'json',
-    property: 'defaultConfig',
-    name: 'defaultConfig'
   }
 ];
 
