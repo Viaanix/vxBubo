@@ -11,6 +11,7 @@ import {
   fetchHandler
 } from './utils.mjs';
 import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
+import chalk from 'chalk';
 
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {
@@ -85,14 +86,17 @@ export const publishLocalWidget = async (widgetId) => {
     body: widgetJson
   };
   const request = await fetchHandler(`${tbHost()}/api/widgetType`, params);
-  // const response = await request.json();
-  // console.log(response);
+  if (request.status === 200) {
+    // const response = await request.json();
+    // console.log(response);
 
-  // Backup current widget
-  fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
+    // Backup current widget
+    fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
 
-  // Update Local Widget Export
-  await createFile(widgetJsonPath(widgetId), widgetJson);
+    // Update Local Widget Export
+    await createFile(widgetJsonPath(widgetId), widgetJson);
+    console.log(chalk.green('🦉 Widget has successfully been published'));
+  }
 };
 
 const resourcesWriteMap = [

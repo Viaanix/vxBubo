@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { tbHost } from '../index.mjs';
+import { scratchPath, tbHost } from '../index.mjs';
 
 export const authHeaders = (token) => {
   return {
@@ -17,18 +17,10 @@ export const fetchHandler = async (url, params) => {
     console.log('Token is expired, refreshing..');
     await refreshToken();
   }
-  //
-  // const auth = authHeaders();
-  // params.headers = {...auth.headers,...params?.headers}
-  // console.log(`fetchHandler => `, params.headers)
-  // return await fetch(url, {...params });
-
-  return await fetch(url, { ...authHeaders(), ...params });
+  // TODO : Improve dis.
+  params.headers = { ...authHeaders().headers, ...params?.headers };
+  return await fetch(url, { ...params });
 };
-
-// export const authFetch = async (url, token) => {
-//   return await fetch(url, { ...authHeaders(token) });
-// };
 
 export const parseJwt = (token) => {
   return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
@@ -57,6 +49,7 @@ export const refreshToken = async () => {
       refreshToken: getRefreshToken()
     })
   };
+
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeaders(), ...params });
   const response = await request.json();
   if (response.token) {

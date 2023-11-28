@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { prompForToken, promptWidgetId, promptMenu, promptPublishLocalWidgets } from './src/prompt.mjs';
-import { refreshToken, validToken } from './src/utils.mjs';
+import { validToken } from './src/utils.mjs';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './src/package.mjs';
 import { getToken, getActiveWidget } from './src/session.mjs';
 import path from 'path';
@@ -38,7 +38,7 @@ if (Object.keys(options).length === 0) {
 
 if (options.token) {
   await prompForToken();
-  // await refreshToken();
+  await showMainMenu();
 }
 
 // Check for a token to continue
@@ -68,7 +68,7 @@ if (options.get) {
   await fetchAndSaveRemoteWidget(widgetId);
   // Parse Widget Export for local development
   await parseWidgetExport(widgetId);
-  console.log(`Widget ${widgetId} has been downloaded and ready to develop`);
+  console.log(`🦉 Widget ${widgetId} has been downloaded and ready to develop`);
   // await showMainMenu();
 }
 
@@ -81,5 +81,5 @@ if (options.push) {
 async function showMainMenu () {
   const answer = await promptMenu();
   options[answer] = true;
-  console.log(`You have made a wise choice ${answer}`);
+  // console.log(`🦉 You have made a wise choice ${answer}`);
 }
