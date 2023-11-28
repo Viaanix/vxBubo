@@ -1,6 +1,6 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import { getLocalWidgets, getUserRefreshToken, validToken } from './utils.mjs';
+import { getUserRefreshToken, validToken } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
 import { tbHost } from '../index.mjs';
 

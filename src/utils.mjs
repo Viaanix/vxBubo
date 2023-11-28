@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { scratchPath, tbHost } from '../index.mjs';
+import { tbHost } from '../index.mjs';
 
 export const authHeaders = (token) => {
   return {
@@ -15,6 +15,7 @@ export const fetchHandler = async (url, params) => {
   // Check if the token is expired or will expire soon refresh token.
   if (isTokenExpired()) {
     console.log('Token is expired, refreshing..');
+    await refreshToken();
     await refreshToken();
   }
   // TODO : Improve dis.
