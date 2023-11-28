@@ -19,7 +19,8 @@ export const fetchHandler = async (url, params) => {
     await refreshToken();
   }
   // TODO : Improve dis.
-  params.headers = { ...authHeaders().headers, ...params?.headers };
+  const auth = authHeaders();
+  params.headers = { ...auth.headers, ...params?.headers };
   return await fetch(url, { ...params });
 };
 
