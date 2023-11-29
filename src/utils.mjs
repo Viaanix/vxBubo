@@ -17,9 +17,13 @@ export const fetchHandler = async (url, params) => {
     console.log('Token is expired, refreshing..');
     await refreshToken();
   }
-  // TODO : Improve dis.
+  // TODO : Improve this.
   const auth = authHeaders();
-  params.headers = { ...auth?.headers, ...params?.headers };
+  if (params?.headers) {
+    params.headers = { ...auth?.headers, ...params?.headers };
+  } else {
+    params.headers = auth;
+  }
   return await fetch(url, { ...params });
 };
 
@@ -50,7 +54,7 @@ export const refreshToken = async () => {
       refreshToken: getRefreshToken()
     })
   };
-
+  // TODO: Verify this
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeaders(), ...params });
   const response = await request.json();
   if (response.token) {

@@ -1,6 +1,7 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
 import {
+  checkPath,
   findLocalWidgetsWithModifiedAssets,
   getUserRefreshToken, getWidgetLocal,
   validToken
@@ -17,7 +18,6 @@ const clearPrevious = { clearPromptOnDone: true };
 export const promptMainMenu = async () => {
   const disableToken = await validToken() === false;
   const disableHost = tbHost() === null;
-  const disableWidget = getActiveWidget() === null;
 
   const answer = await select({
     message: '🦉 What would you like to do?',
@@ -32,13 +32,13 @@ export const promptMainMenu = async () => {
         name: 'Get Widget',
         value: 'get',
         description: '⚡️ Get a widget from ThingsBoard using the widgetId',
-        disabled: (disableHost || disableToken || disableWidget)
+        disabled: (disableHost || disableToken)
       },
       {
         name: 'Publish Widget',
         value: 'push',
         description: '🚀 PUSH active widget',
-        disabled: (disableHost || disableToken || disableWidget)
+        disabled: (disableHost || disableToken)
       },
       {
         name: 'Publish Multiple Widgets',
@@ -90,10 +90,14 @@ export const promptGetWidget = async () => {
   let promptGetAction;
 
   if (widgetId) {
-    const widgetJson = await getWidgetLocal(path.join(scratchPath, 'widgets', `${widgetId}.json`));
+    const widgetLocalJsonPath = path.join(scratchPath, 'widgets', `${widgetId}.json`);
+    let widgetJson;
+    if (await checkPath(widgetLocalJsonPath)) {
+      widgetJson = await getWidgetLocal();
+    }
     promptGetAction = await confirm({
       name: 'widgetId',
-      message: `🦉 Would you like to get widget ${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)}) ?`
+      message: `🦉 Would you like to get widget ${chalk.bold.green(widgetJson.name)} (${widgetJson ? chalk.reset.yellow(widgetId) : ''}) ?`
     }, clearPrevious);
   }
   if (!promptGetAction) {
