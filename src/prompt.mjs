@@ -94,7 +94,7 @@ export const promptGetWidget = async () => {
     let widgetJson;
     let messageChunk = `id: ${widgetId} ${chalk.red('unable to locate local json.')}`;
     if (await checkPath(widgetLocalJsonPath)) {
-      widgetJson = await getWidgetLocal();
+      widgetJson = await getWidgetLocal(widgetLocalJsonPath);
       messageChunk = `${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)})`;
     }
     promptGetAction = await confirm({
