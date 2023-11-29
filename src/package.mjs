@@ -95,7 +95,7 @@ export const publishLocalWidget = async (widgetId) => {
 
     // Update Local Widget Export
     await createFile(widgetJsonPath(widgetId), widgetJson);
-    console.log(chalk.green('🦉 Widget has successfully been published'));
+    console.log(chalk.green(`🦉 Widget ${widgetJson.name} has successfully been published`));
   }
 };
 

@@ -11,7 +11,7 @@ export const authHeaders = (token) => {
   };
 };
 
-export const fetchHandler = async (url, params) => {
+export const fetchHandler = async (url, params = {}) => {
   // Check if the token is expired or will expire soon refresh token.
   if (isTokenExpired()) {
     console.log('Token is expired, refreshing..');
@@ -182,8 +182,8 @@ export const findLocalWidgetsWithModifiedAssets = async () => {
           const widgetAssetPath = path.join(widgetPath, widgetAsset);
           const stats = fs.statSync(widgetAssetPath);
 
-          if ((stats.mtime > widget.modified) || (stats.mtime > widget.assetsModified)) {
-            widget.assetsModified = stats.mtime;
+          if (stats.mtime > widget.modified) {
+            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
           }
         }
       }

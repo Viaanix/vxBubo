@@ -146,7 +146,7 @@ export const promptPublishLocalWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
   const widgetChoices = localWidgets.map((widget) => {
-    let modifiedAgo;
+    let modifiedAgo = '';
     if (widget?.assetsModified) {
       modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
     }
