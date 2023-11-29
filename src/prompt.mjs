@@ -1,10 +1,20 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import { getUserRefreshToken, validToken } from './utils.mjs';
+import {
+  findLocalWidgetsWithModifiedAssets,
+  getUserRefreshToken, getWidgetLocal,
+  validToken
+} from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
-import { tbHost } from '../index.mjs';
+import { scratchPath, tbHost } from '../index.mjs';
+import chalk from 'chalk';
+import { formatDistanceToNow } from 'date-fns';
+import path from 'path';
+import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './package.mjs';
 
-export const promptMenu = async () => {
+const clearPrevious = { clearPromptOnDone: true };
+
+export const promptMainMenu = async () => {
   const disableToken = await validToken() === false;
   const disableHost = tbHost() === null;
   const disableWidget = getActiveWidget() === null;
@@ -19,15 +29,9 @@ export const promptMenu = async () => {
         disabled: disableHost
       },
       {
-        name: 'Set the widget id',
-        value: 'widget',
-        description: '⚙️ Specify the widget you would like to work with',
-        disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'Get widget json from ThingsBoard',
+        name: 'Get Widget',
         value: 'get',
-        description: '⚡️ Get widget from ThingsBoard',
+        description: '⚡️ Get a widget from ThingsBoard using the widgetId',
         disabled: (disableHost || disableToken || disableWidget)
       },
       {
@@ -36,12 +40,12 @@ export const promptMenu = async () => {
         description: '🚀 PUSH active widget',
         disabled: (disableHost || disableToken || disableWidget)
       },
-      // {
-      //   name: 'Publish Multiple Widgets',
-      //   value: 'pushMultiple',
-      //   description: 'PUSH Multiple Widgets',
-      //   disabled: (disableHost || disableToken)
-      // },
+      {
+        name: 'Publish Multiple Widgets',
+        value: 'pushMultiple',
+        description: '🚀 PUSH Multiple Widgets',
+        disabled: (disableHost || disableToken)
+      },
       // {
       //   name: 'bundle',
       //   value: 'bundle',
@@ -53,33 +57,19 @@ export const promptMenu = async () => {
         description: '🗑️ Clean local data such as host, token and widget id'
       }
     ]
-  });
+  }, clearPrevious);
   return answer;
 };
 
-// export const prompForHost = async () => {
-//   const answer = await input({
-//     message: 'What is the url for the ThingsBoard instance you would like to work with?'
-//   });
-//
-//   const urlClean = answer.trim().replace(/\/+$/g, '');
-//
-//   // TODO: Test URL
-//   try {
-//     new URL(urlClean);
-//     localStorage.setItem('host', urlClean);
-//     return localStorage.getItem('host');
-//   } catch {
-//     const message = `ThingsBoard host ${urlClean} is not valid.`;
-//     console.log(message);
-//     throw new Error(message);
-//   }
-// };
-
 export const prompForToken = async () => {
   await confirm({
-    message: `🦉 Login to ThingsBoard click => ${tbHost()}/security then press "Copy JWT token". Finished?`
-  });
+    message: `🦉 Let's get your Thingsboard Auth Token.
+    ${chalk.reset('1) Login to ThingsBoard')}
+    ${chalk.reset(`2) Open this URL => ${tbHost()}/security `)}
+    ${chalk.reset(`3) Press the button ${chalk.bold.green('"Copy JWT token"')} ${chalk.reset('to copy the token to your clipboard')}`)}
+        
+    Finished?`
+  }, clearPrevious);
 
   const clip = clipboard.readSync();
   try {
@@ -87,37 +77,82 @@ export const prompForToken = async () => {
     await validToken(token);
     localStorage.setItem('token', token);
     await getUserRefreshToken();
-    return localStorage.getItem('token');
   } catch {
     const message = 'Token is not valid.';
     console.log(message);
     throw new Error(message);
   }
+  return promptMainMenu();
 };
 
-export const promptWidgetId = async () => {
-  const answer = await input({
-    name: 'widgetId',
-    message: '🦉 What is the widget bundle id you would like to work on?'
-  });
-  if (answer) {
-    localStorage.setItem('widgetId', answer);
+export const promptGetWidget = async () => {
+  let widgetId = await getActiveWidget();
+  let promptGetAction;
+
+  if (widgetId) {
+    const widgetJson = await getWidgetLocal(path.join(scratchPath, 'widgets', `${widgetId}.json`));
+    promptGetAction = await confirm({
+      name: 'widgetId',
+      message: `🦉 Would you like to get widget ${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)}) ?`
+    }, clearPrevious);
   }
-  return localStorage.getItem('widgetId');
+  if (!promptGetAction) {
+    const answer = await input({
+      name: 'widgetId',
+      message: `🦉 What is the widget id you would like to ${chalk.bold.green('get')}?`
+    }, clearPrevious);
+    if (answer) {
+      localStorage.setItem('widgetId', answer.trim());
+      widgetId = await getActiveWidget();
+    }
+  }
+  try {
+    await fetchAndSaveRemoteWidget(widgetId);
+
+    // Parse Widget Export for local development
+    await parseWidgetExport(widgetId);
+    console.log(`🦉 Widget ${widgetId} has been downloaded and ready to develop`);
+  } catch (error) {
+    console.log(`🦉 ${chalk.bold.red(`Unable to download ${widgetId}`)}`);
+    console.log(error);
+  }
+};
+
+export const promptPublishWidget = async () => {
+  const widgetId = await getActiveWidget();
+  let promptPublishAction;
+
+  if (widgetId) {
+    const widgetJson = await getWidgetLocal(path.join(scratchPath, 'widgets', `${widgetId}.json`));
+    promptPublishAction = await confirm({
+      name: 'publish',
+      message: `🦉 Would you like to publish widget ${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)}) ?`
+    }, clearPrevious);
+  }
+  if (promptPublishAction) {
+    await publishLocalWidget(widgetId);
+  } else {
+    await promptPublishLocalWidgets();
+  }
 };
 
 export const promptPublishLocalWidgets = async () => {
-  // TODO: Get a list of all local widgets
+  const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
-  const choices = [
-    { name: 'npm', value: 'npm' }
-  ];
+  const widgetChoices = localWidgets.map((widget) => {
+    let modifiedAgo;
+    if (widget?.assetsModified) {
+      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
+    }
+    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
+  });
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
-    choices
-  });
+    choices: widgetChoices
+  }, clearPrevious);
 
-  // TODO: Handle publishing all selected widgets
-  console.log('promptPublishLocalWidgets=>', answer);
+  answer.map(async (widget) => {
+    return await publishLocalWidget(widget.id);
+  });
 };

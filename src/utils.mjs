@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { tbHost } from '../index.mjs';
+import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
 
 export const authHeaders = (token) => {
   return {
@@ -134,4 +134,56 @@ export const getLocalFile = async (filePath) => {
 export const getWidgetLocal = async (widgetPath) => {
   const widgetJsonRaw = await getLocalFile(widgetPath);
   return JSON.parse(widgetJsonRaw);
+};
+
+export const discoverLocalWidgetJsons = async () => {
+  const widgetJsonDir = path.join(scratchPath, 'widgets');
+  const localWidgets = [];
+
+  await Promise.all(
+    fs.readdirSync(widgetJsonDir).map(async (file) => {
+      if (!file.includes('bak')) {
+        const fileExt = path.extname(file);
+        const widgetJsonPath = path.join(widgetJsonDir, file);
+
+        if (fileExt === '.json') {
+          const widgetJson = await getWidgetLocal(widgetJsonPath);
+          const widgetPath = path.join(localWidgetPath, widgetJson.name);
+          const stats = fs.statSync(widgetJsonPath);
+          const payload = {
+            name: widgetJson.name,
+            id: file.split('.')[0],
+            jsonPath: widgetJsonPath,
+            widgetPath,
+            modified: stats.mtime
+          };
+          localWidgets.push(payload);
+        }
+      }
+    })
+  );
+  return localWidgets;
+};
+
+export const findLocalWidgetsWithModifiedAssets = async () => {
+  const localWidgets = await discoverLocalWidgetJsons();
+
+  return await Promise.all(
+    localWidgets.map(async (widget) => {
+      const widgetPath = path.join(localWidgetPath, widget.name);
+      if (await checkPath(widgetPath)) {
+        const widgetFiles = await fs.readdirSync(widgetPath, { recursive: true });
+
+        for (const widgetAsset of widgetFiles) {
+          const widgetAssetPath = path.join(widgetPath, widgetAsset);
+          const stats = fs.statSync(widgetAssetPath);
+
+          if ((stats.mtime > widget.modified) || (stats.mtime > widget.assetsModified)) {
+            widget.assetsModified = stats.mtime;
+          }
+        }
+      }
+      return widget;
+    })
+  );
 };
