@@ -1,24 +1,22 @@
 import path from 'path';
 import fs from 'node:fs';
 import { finished } from 'stream/promises';
-
 import {
   checkPath,
   createFile,
   formatJson,
   getLocalFile,
   getWidgetLocal,
-  getWidgetRemote,
-  validatePath
+  validatePath,
+  fetchHandler
 } from './utils.mjs';
-import { getToken } from './session.mjs';
 import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
+import chalk from 'chalk';
 
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
-
   return path.join(scratchPath, 'widgets', `${widgetId}.json`);
 };
 
@@ -26,7 +24,8 @@ export const fetchAndSaveRemoteWidget = async (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
-  const request = await getWidgetRemote(widgetId);
+
+  const request = await fetchHandler(`${tbHost()}/api/widgetType/${widgetId}`);
 
   if (request.ok) {
     await validatePath(path.join(scratchPath, 'widgets'));
@@ -72,28 +71,32 @@ export const publishLocalWidget = async (widgetId) => {
     widgetJson.descriptor.defaultConfig = JSON.stringify(await processActions(widgetJson, outputAction));
   }
 
+  // const widgetPath = path.join(localWidgetPath, widgetJson.name);
+  // const widgetTestFile = path.join(widgetPath, 'test.json')
   widgetJson = formatJson(widgetJson);
 
   // await createFile(path.join(widgetPath, 'test.json'), widgetJson);
 
-  const url = `${tbHost()}/api/widgetType`;
   const params = {
     headers: {
-      Authorization: getToken(),
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
     method: 'POST',
     body: widgetJson
   };
-  const request = await fetch(url, { ...params });
-  await request.json();
+  const request = await fetchHandler(`${tbHost()}/api/widgetType`, params);
+  if (request.status === 200) {
+    // const response = await request.json();
+    // console.log(response);
 
-  // Backup current widget
-  fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
+    // Backup current widget
+    fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
 
-  // Update Local Widget Export
-  await createFile(widgetJsonPath(widgetId), widgetJson);
+    // Update Local Widget Export
+    await createFile(widgetJsonPath(widgetId), widgetJson);
+    console.log(chalk.green('🦉 Widget has successfully been published'));
+  }
 };
 
 const resourcesWriteMap = [
@@ -118,11 +121,6 @@ const resourcesWriteMap = [
     extension: 'json',
     property: 'dataKeySettingsSchema',
     name: 'dataKeySettingsSchema'
-  },
-  {
-    extension: 'json',
-    property: 'defaultConfig',
-    name: 'defaultConfig'
   }
 ];
 
@@ -138,6 +136,10 @@ const actionWriteMap = [
   {
     extension: 'css',
     property: 'customCss'
+  },
+  {
+    extension: 'js',
+    property: 'showWidgetActionFunction'
   }
 ];
 
@@ -160,10 +162,11 @@ const processActions = async (widgetJson, output) => {
           // Create widget action resources
           actionWriteMap.map(async (a) => {
             const actionFileName = `${a.property}.${a.extension}`;
+            const actionFilePath = path.join(actionPath, actionFileName);
             if (isWrite) {
               if (!action[a.property]) return;
               await createFile(path.join(actionPath, actionFileName), action[a.property]);
-            } else if (isBundle) {
+            } else if (isBundle && await checkPath(actionFilePath)) {
               action[a.property] = await getLocalFile(path.join(actionPath, actionFileName));
             }
           });

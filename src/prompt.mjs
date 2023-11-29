@@ -1,6 +1,6 @@
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import { validToken } from './utils.mjs';
+import { getUserRefreshToken, validToken } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
 import { tbHost } from '../index.mjs';
 
@@ -10,34 +10,34 @@ export const promptMenu = async () => {
   const disableWidget = getActiveWidget() === null;
 
   const answer = await select({
-    message: 'What would you like to do?',
+    message: '🦉 What would you like to do?',
     choices: [
       {
-        name: 'set token',
+        name: 'Set ThingsBoard JWT token',
         value: 'token',
-        description: 'Copy JWT token from ThingsBoard',
+        description: '🎟️ Copy JWT token from ThingsBoard',
         disabled: disableHost
       },
       {
-        name: 'set widget id',
+        name: 'Set the widget id',
         value: 'widget',
-        description: 'specify the widget you would like to work with',
+        description: '⚙️ Specify the widget you would like to work with',
         disabled: (disableHost || disableToken)
       },
       {
-        name: 'get',
+        name: 'Get widget json from ThingsBoard',
         value: 'get',
-        description: 'GET Widget from ThingsBoard',
+        description: '⚡️ Get widget from ThingsBoard',
         disabled: (disableHost || disableToken || disableWidget)
       },
       {
-        name: 'push',
+        name: 'Publish Widget',
         value: 'push',
-        description: 'PUSH active widget',
+        description: '🚀 PUSH active widget',
         disabled: (disableHost || disableToken || disableWidget)
       },
       // {
-      //   name: 'push multiple',
+      //   name: 'Publish Multiple Widgets',
       //   value: 'pushMultiple',
       //   description: 'PUSH Multiple Widgets',
       //   disabled: (disableHost || disableToken)
@@ -48,13 +48,12 @@ export const promptMenu = async () => {
       //   description: 'Bundle local widget for install'
       // },
       {
-        name: 'clean',
+        name: 'Clear tokens and active widget id',
         value: 'clean',
-        description: 'Clean local data such as host, token and widget id'
+        description: '🗑️ Clean local data such as host, token and widget id'
       }
     ]
   });
-
   return answer;
 };
 
@@ -79,13 +78,15 @@ export const promptMenu = async () => {
 
 export const prompForToken = async () => {
   await confirm({
-    message: `Login to ThingsBoard click => ${tbHost()}/security then press "Copy JWT token". Finished?`
+    message: `🦉 Login to ThingsBoard click => ${tbHost()}/security then press "Copy JWT token". Finished?`
   });
 
   const clip = clipboard.readSync();
   try {
-    await validToken(clip);
-    localStorage.setItem('token', clip);
+    const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
+    await validToken(token);
+    localStorage.setItem('token', token);
+    await getUserRefreshToken();
     return localStorage.getItem('token');
   } catch {
     const message = 'Token is not valid.';
@@ -97,7 +98,7 @@ export const prompForToken = async () => {
 export const promptWidgetId = async () => {
   const answer = await input({
     name: 'widgetId',
-    message: 'What is the widget bundle id you would like to work on?'
+    message: '🦉 What is the widget bundle id you would like to work on?'
   });
   if (answer) {
     localStorage.setItem('widgetId', answer);
@@ -107,12 +108,13 @@ export const promptWidgetId = async () => {
 
 export const promptPublishLocalWidgets = async () => {
   // TODO: Get a list of all local widgets
+
   const choices = [
     { name: 'npm', value: 'npm' }
   ];
 
   const answer = await checkbox({
-    message: 'What widgets would you like to publish?',
+    message: '🦉 What widgets would you like to publish?',
     choices
   });
 

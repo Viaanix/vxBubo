@@ -49,12 +49,12 @@ if (!getToken() || !validToken()) {
 
 if (options.widget) {
   await promptWidgetId();
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 if (options.pushMultiple) {
   await promptPublishLocalWidgets();
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 let widgetId = await getActiveWidget();
@@ -68,18 +68,18 @@ if (options.get) {
   await fetchAndSaveRemoteWidget(widgetId);
   // Parse Widget Export for local development
   await parseWidgetExport(widgetId);
-  console.log(`Widget ${widgetId} has been downloaded and ready to develop`);
-  await showMainMenu();
+  console.log(`🦉 Widget ${widgetId} has been downloaded and ready to develop`);
+  // await showMainMenu();
 }
 
 // Publish Local Widget?
 if (options.push) {
   await publishLocalWidget(widgetId);
-  await showMainMenu();
+  // await showMainMenu();
 }
 
 async function showMainMenu () {
   const answer = await promptMenu();
   options[answer] = true;
-  console.log(`You have made a wise choice ${answer}`);
+  // console.log(`🦉 You have made a wise choice ${answer}`);
 }

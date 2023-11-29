@@ -1,15 +1,74 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getToken } from './session.mjs';
+import localStorage, { getRefreshToken, getToken } from './session.mjs';
 import { tbHost } from '../index.mjs';
 
-export const authFetch = async (url, token) => {
-  const authHeader = {
+export const authHeaders = (token) => {
+  return {
     headers: {
-      Authorization: token || await getToken()
+      Authorization: token || getToken()
     }
   };
-  return fetch(url, { ...authHeader });
+};
+
+export const fetchHandler = async (url, params) => {
+  // Check if the token is expired or will expire soon refresh token.
+  if (isTokenExpired()) {
+    console.log('Token is expired, refreshing..');
+    await refreshToken();
+  }
+  // TODO : Improve dis.
+  const auth = authHeaders();
+  params.headers = { ...auth?.headers, ...params?.headers };
+  return await fetch(url, { ...params });
+};
+
+export const parseJwt = (token) => {
+  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+};
+
+const getParsedToken = (token) => {
+  token = token || getToken();
+  return parseJwt(token.replace('Bearer', '').trim());
+};
+
+export const isTokenExpired = () => {
+  const parsedToken = getParsedToken();
+  // Fudge factor, will it expire in 5 minutes ?
+  const fudge = 5 * 60;
+  return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
+};
+
+export const refreshToken = async () => {
+  const params = {
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    method: 'POST',
+    body: JSON.stringify({
+      refreshToken: getRefreshToken()
+    })
+  };
+
+  const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeaders(), ...params });
+  const response = await request.json();
+  if (response.token) {
+    localStorage.setItem('token', `Bearer ${response.token}`);
+  }
+  if (response.refreshToken) {
+    localStorage.setItem('refreshToken', response.refreshToken);
+  }
+  // console.log('refreshToken => ', response);
+};
+
+export const getUserRefreshToken = async () => {
+  const parsedToken = getParsedToken();
+  const tokenRequest = await fetch(`${tbHost()}/api/user/${parsedToken.userId}/token`, { ...authHeaders() });
+  const tokenResponse = await tokenRequest.json();
+  if (tokenResponse.refreshToken) {
+    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
+  }
 };
 
 // TODO: rename
@@ -19,8 +78,7 @@ export const validToken = async (token) => {
     // console.debug('No Token');
     return false;
   }
-  const apiUrl = `${tbHost()}/api/auth/user`;
-  const request = await authFetch(apiUrl, token);
+  const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
   const response = await request.json();
   if (request.status !== 200) {
     console.log('testToken Failed =>', request.status, response.message);
@@ -65,17 +123,12 @@ export const createFile = async (filePath, data) => {
 export const getLocalFile = async (filePath) => {
   let fileRaw;
   try {
-    fileRaw = await fs.readFileSync(filePath, 'utf8');
+    fileRaw = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
     console.error(error);
     throw new Error(error);
   }
   return fileRaw;
-};
-
-export const getWidgetRemote = async (widgetId) => {
-  const apiUrl = `${tbHost()}/api/widgetType/${widgetId}`;
-  return await authFetch(apiUrl);
 };
 
 export const getWidgetLocal = async (widgetPath) => {
