@@ -16,11 +16,10 @@ export const fetchHandler = async (url, params) => {
   if (isTokenExpired()) {
     console.log('Token is expired, refreshing..');
     await refreshToken();
-    await refreshToken();
   }
   // TODO : Improve dis.
   const auth = authHeaders();
-  params.headers = { ...auth.headers, ...params?.headers };
+  params.headers = { ...auth?.headers, ...params?.headers };
   return await fetch(url, { ...params });
 };
 
