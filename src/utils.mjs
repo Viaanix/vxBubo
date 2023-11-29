@@ -20,9 +20,9 @@ export const fetchHandler = async (url, params) => {
   // TODO : Improve this.
   const auth = authHeaders();
   if (params?.headers) {
-    params.headers = { ...auth?.headers, ...params?.headers };
+    params.headers = { ...auth.headers, ...params?.headers };
   } else {
-    params.headers = auth;
+    params.headers = { ...auth.headers };
   }
   return await fetch(url, { ...params });
 };
