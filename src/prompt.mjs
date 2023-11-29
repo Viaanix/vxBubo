@@ -92,12 +92,14 @@ export const promptGetWidget = async () => {
   if (widgetId) {
     const widgetLocalJsonPath = path.join(scratchPath, 'widgets', `${widgetId}.json`);
     let widgetJson;
+    let messageChunk = `id: ${widgetId} ${chalk.red('unable to locate local json.')}`;
     if (await checkPath(widgetLocalJsonPath)) {
       widgetJson = await getWidgetLocal();
+      messageChunk = `${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)})`;
     }
     promptGetAction = await confirm({
       name: 'widgetId',
-      message: `🦉 Would you like to get widget ${chalk.bold.green(widgetJson.name)} (${widgetJson ? chalk.reset.yellow(widgetId) : ''}) ?`
+      message: `🦉 Would you like to get widget  ${messageChunk}?`
     }, clearPrevious);
   }
   if (!promptGetAction) {
