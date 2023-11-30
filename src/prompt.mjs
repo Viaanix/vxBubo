@@ -35,17 +35,18 @@ export const promptMainMenu = async () => {
         disabled: (disableHost || disableToken)
       },
       {
-        name: 'Publish Widget',
+        name: 'Publish Widgets',
         value: 'push',
-        description: '🚀 PUSH active widget',
+        description: '🚀 Publish Widgets to ThingsBoard',
         disabled: (disableHost || disableToken)
       },
       {
-        name: 'Publish Multiple Widgets',
-        value: 'pushMultiple',
-        description: '🚀 PUSH Multiple Widgets',
+        name: 'Publish Modified Widgets',
+        value: 'publishModified',
+        description: '🤖🚀 Publish modified widgets',
         disabled: (disableHost || disableToken)
       },
+
       // {
       //   name: 'bundle',
       //   value: 'bundle',
@@ -124,22 +125,14 @@ export const promptGetWidget = async () => {
   }
 };
 
-export const promptPublishWidget = async () => {
-  const widgetId = await getActiveWidget();
-  let promptPublishAction;
+export const promptPublishModifiedWidgets = async () => {
+  const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
-  if (widgetId) {
-    const widgetJson = await getWidgetLocal(path.join(scratchPath, 'widgets', `${widgetId}.json`));
-    promptPublishAction = await confirm({
-      name: 'publish',
-      message: `🦉 Would you like to publish widget ${chalk.bold.green(widgetJson.name)} (${chalk.reset.yellow(widgetId)}) ?`
-    }, clearPrevious);
-  }
-  if (promptPublishAction) {
-    await publishLocalWidget(widgetId);
-  } else {
-    await promptPublishLocalWidgets();
-  }
+  const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
+
+  modifiedWidgets.map(async (widget) => {
+    return await publishLocalWidget(widget.id);
+  });
 };
 
 export const promptPublishLocalWidgets = async () => {

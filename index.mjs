@@ -5,7 +5,7 @@ import {
   promptMainMenu,
   promptPublishLocalWidgets,
   promptGetWidget,
-  promptPublishWidget
+  promptPublishModifiedWidgets
 } from './src/prompt.mjs';
 import { refreshToken, validToken } from './src/utils.mjs';
 import { getToken } from './src/session.mjs';
@@ -32,8 +32,8 @@ program
   .description('Your guide to develop Thingsboard Widgets locally')
   // .option('-b, --bundle', 'Bundle local widget')
   .option('-g, --get', 'Get widget from ThingsBoard')
-  .option('-p, --push', 'Publish local widget ThingsBoard')
-  .option('-pm, --push-multiple', 'Publish Multiple local widgets to ThingsBoard')
+  .option('-p, --push', 'Publish local widgets to ThingsBoard')
+  .option('-pm, --publish-modified', 'Publish all modified local widgets to ThingsBoard')
   .option('-c, --clean', 'Clean local data such as host, token and widget id');
 
 program.parse();
@@ -59,8 +59,8 @@ if (!getToken() || !validToken()) {
   await prompForToken();
 }
 
-if (options.pushMultiple) {
-  await promptPublishLocalWidgets();
+if (options.publishModified) {
+  await promptPublishModifiedWidgets();
 }
 
 // Get Widget from ThingsBoard
@@ -70,7 +70,7 @@ if (options.get) {
 
 // Publish Local Widget?
 if (options.push) {
-  await promptPublishWidget();
+  await promptPublishLocalWidgets();
 }
 
 async function showMainMenu () {

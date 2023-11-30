@@ -56,7 +56,7 @@ export const refreshToken = async () => {
     })
   };
   // TODO: Verify this
-  const request = await fetch(`${tbHost()}/api/auth/token`, { ..params });
+  const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
   const response = await request.json();
   if (response.token) {
     localStorage.setItem('token', `Bearer ${response.token}`);
@@ -64,7 +64,7 @@ export const refreshToken = async () => {
   if (response.refreshToken) {
     localStorage.setItem('refreshToken', response.refreshToken);
   }
-  // console.log('refreshToken => ', response);
+  return true;
 };
 
 export const getUserRefreshToken = async () => {
