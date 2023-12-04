@@ -216,7 +216,7 @@ export const publishLocalWidget = async (widgetJson) => {
     fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
 
     // Update Local Widget Export
-    await createFile(widgetJsonPath(widgetId), widgetJson);
+    await createFile(widgetJsonPath(widgetId), widgetJsonFormatted);
     console.log(chalk.green(`🚀 Widget ${widgetName} has successfully been published`));
   } else {
     const response = await request.json();
