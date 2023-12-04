@@ -3,7 +3,7 @@ import clipboard from 'clipboardy';
 import {
   checkPath,
   findLocalWidgetsWithModifiedAssets,
-  getUserRefreshToken, getWidgetLocal,
+  getUserRefreshToken, getWidgetLocal, goodbye,
   validToken
 } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
@@ -11,7 +11,11 @@ import { scratchPath, tbHost } from '../index.mjs';
 import chalk from 'chalk';
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
-import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './package.mjs';
+import {
+  fetchAndSaveRemoteWidget,
+  parseWidgetExport,
+  publishLocalWidgetToThingsboard
+} from './package.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
 
@@ -46,7 +50,6 @@ export const promptMainMenu = async () => {
         description: '🤖🚀 Publish modified widgets',
         disabled: (disableHost || disableToken)
       },
-
       // {
       //   name: 'bundle',
       //   value: 'bundle',
@@ -123,28 +126,21 @@ export const promptGetWidget = async () => {
     console.log(`🦉 ${chalk.bold.red(`Unable to download ${widgetId}`)}`);
     console.log(error);
   }
+  goodbye();
 };
 
 export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
-
   const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
 
   modifiedWidgets.map(async (widget) => {
-    return await publishLocalWidget(widget.id);
+    return await publishLocalWidgetToThingsboard(widget.id);
   });
+  goodbye();
 };
 
 export const promptPublishLocalWidgets = async () => {
-  const localWidgets = await findLocalWidgetsWithModifiedAssets();
-
-  const widgetChoices = localWidgets.map((widget) => {
-    let modifiedAgo = '';
-    if (widget?.assetsModified) {
-      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
-    }
-    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
-  });
+  const widgetChoices = await getLocalWidgetChoices();
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
@@ -152,6 +148,20 @@ export const promptPublishLocalWidgets = async () => {
   }, clearPrevious);
 
   answer.map(async (widget) => {
-    return await publishLocalWidget(widget.id);
+    return await publishLocalWidgetToThingsboard(widget.id);
+  });
+  goodbye();
+};
+
+// Helpers
+const getLocalWidgetChoices = async () => {
+  const localWidgets = await findLocalWidgetsWithModifiedAssets();
+
+  return localWidgets.map((widget) => {
+    let modifiedAgo = '';
+    if (widget?.assetsModified) {
+      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
+    }
+    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
   });
 };

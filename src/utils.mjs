@@ -3,6 +3,11 @@ import fs from 'fs';
 import localStorage, { getRefreshToken, getToken } from './session.mjs';
 import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
 
+export const goodbye = () => {
+  console.log('🦉 Goodbye!');
+  process.exit(1);
+};
+
 export const authHeaders = (token) => {
   return {
     headers: {
