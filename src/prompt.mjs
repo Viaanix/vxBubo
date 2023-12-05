@@ -3,7 +3,8 @@ import clipboard from 'clipboardy';
 import {
   checkPath,
   findLocalWidgetsWithModifiedAssets,
-  getUserRefreshToken, getWidgetLocal,
+  getUserRefreshToken,
+  getWidgetLocal,
   validToken
 } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
@@ -14,6 +15,11 @@ import path from 'path';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './package.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
+
+export const goodbye = () => {
+  console.log('🦉 Goodbye!');
+  process.exit(1);
+};
 
 export const promptMainMenu = async () => {
   const disableToken = await validToken() === false;
@@ -43,7 +49,7 @@ export const promptMainMenu = async () => {
       {
         name: 'Publish Modified Widgets',
         value: 'publishModified',
-        description: '🤖🚀 Publish modified widgets',
+        description: '🤖🚀 Publish all modified widgets',
         disabled: (disableHost || disableToken)
       },
 
@@ -123,35 +129,45 @@ export const promptGetWidget = async () => {
     console.log(`🦉 ${chalk.bold.red(`Unable to download ${widgetId}`)}`);
     console.log(error);
   }
+  goodbye();
 };
 
 export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
   const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
-
-  modifiedWidgets.map(async (widget) => {
-    return await publishLocalWidget(widget.id);
-  });
+  Promise.all(
+    modifiedWidgets.map(async (widget) => {
+      return await publishLocalWidget(widget.id);
+    })
+  );
+  goodbye();
 };
 
 export const promptPublishLocalWidgets = async () => {
-  const localWidgets = await findLocalWidgetsWithModifiedAssets();
-
-  const widgetChoices = localWidgets.map((widget) => {
-    let modifiedAgo = '';
-    if (widget?.assetsModified) {
-      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
-    }
-    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
-  });
+  const widgetChoices = await getLocalWidgetChoices();
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
     choices: widgetChoices
   }, clearPrevious);
 
-  answer.map(async (widget) => {
-    return await publishLocalWidget(widget.id);
+  Promise.all(
+    answer.map(async (widget) => {
+      return await publishLocalWidget(widget.id);
+    })
+  );
+  goodbye();
+};
+
+// Helpers
+const getLocalWidgetChoices = async () => {
+  const localWidgets = await findLocalWidgetsWithModifiedAssets();
+  return localWidgets.map((widget) => {
+    let modifiedAgo = '';
+    if (widget?.assetsModified) {
+      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
+    }
+    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
   });
 };

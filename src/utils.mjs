@@ -55,7 +55,6 @@ export const refreshToken = async () => {
       refreshToken: getRefreshToken()
     })
   };
-  // TODO: Verify this
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
   const response = await request.json();
   if (response.token) {

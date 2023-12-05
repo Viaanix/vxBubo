@@ -40,10 +40,9 @@ program.parse();
 
 const options = program.opts();
 
-// Show Menu!
-if (getToken() && await !validToken()) {
-  await refreshToken();
-}
+// if (getToken() && await !validToken()) {
+//   await refreshToken();
+// }
 
 // No option selected, lets show main menu
 if (Object.keys(options).length === 0) {
