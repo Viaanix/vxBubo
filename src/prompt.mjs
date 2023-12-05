@@ -136,11 +136,15 @@ export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
   const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
-  Promise.all(
-    modifiedWidgets.map(async (widget) => {
-      return await publishLocalWidget(widget.id);
-    })
-  );
+  if (modifiedWidgets) {
+    await Promise.all(
+      modifiedWidgets.map(async (widget) => {
+        return await publishLocalWidget(widget.id);
+      })
+    );
+  } else {
+    console.log(chalk.yellowBright('🦉 No changes to widgets found.'));
+  }
   goodbye();
 };
 
@@ -152,7 +156,7 @@ export const promptPublishLocalWidgets = async () => {
     choices: widgetChoices
   }, clearPrevious);
 
-  Promise.all(
+  await Promise.all(
     answer.map(async (widget) => {
       return await publishLocalWidget(widget.id);
     })
