@@ -44,6 +44,7 @@ export const isTokenExpired = () => {
 };
 
 export const refreshToken = async () => {
+  console.log('refreshing token...');
   const params = {
     headers: {
       Authorization: getToken(),
@@ -56,14 +57,16 @@ export const refreshToken = async () => {
     })
   };
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
-  const response = await request.json();
-  if (response.token) {
-    localStorage.setItem('token', `Bearer ${response.token}`);
+  if (request.status !== 200) {
+    const response = await request.json();
+    if (response.token) {
+      localStorage.setItem('token', `Bearer ${response.token}`);
+    }
+    if (response.refreshToken) {
+      localStorage.setItem('refreshToken', response.refreshToken);
+    }
+    return getToken();
   }
-  if (response.refreshToken) {
-    localStorage.setItem('refreshToken', response.refreshToken);
-  }
-  return true;
 };
 
 export const getUserRefreshToken = async () => {
@@ -87,11 +90,11 @@ export const validToken = async (token) => {
   if (request.status !== 200) {
     console.log('testToken Failed =>', request.status, response.message);
     // TODO: Abstract this away, no localStorage direct calls
-    // Remove token if failed/expired
-    await refreshToken();
-    return false;
+    // Attempt to refresh token
+    token = await refreshToken();
+    return token !== null;
   }
-  return true;
+  return request.status === 200;
 };
 
 export const formatJson = (data) => {

@@ -54,7 +54,7 @@ if (options.token) {
 }
 
 // Check for a token to continue
-if (!getToken() || !validToken()) {
+if (!validToken()) {
   await prompForToken();
 }
 
