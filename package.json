@@ -1,6 +1,6 @@
 {
   "name": "vx-bubo",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Your guide to develop Thingsboard Widgets locally",
   "type": "module",
   "main": "index.mjs",
@@ -26,6 +26,7 @@
     "clipboardy": "^4.0.0",
     "commander": "^11.1.0",
     "cosmiconfig": "^8.3.6",
+    "date-fns": "^2.30.0",
     "eslint": "^8.53.0",
     "eslint-config-standard": "^17.1.0",
     "node-localstorage": "^3.0.5"

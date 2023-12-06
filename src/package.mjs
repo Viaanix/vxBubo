@@ -13,6 +13,7 @@ import {
 import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
 import chalk from 'chalk';
 
+// Helpers
 export const widgetJsonPath = (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
@@ -20,6 +21,51 @@ export const widgetJsonPath = (widgetId) => {
   return path.join(scratchPath, 'widgets', `${widgetId}.json`);
 };
 
+const resourcesWriteMap = [
+  {
+    property: 'controllerScript',
+    extension: 'js'
+  },
+  {
+    property: 'templateHtml',
+    extension: 'html'
+  },
+  {
+    property: 'templateCss',
+    extension: 'css'
+  },
+  {
+    property: 'settingsSchema',
+    extension: 'json',
+    name: 'settingsSchema'
+  },
+  {
+    property: 'dataKeySettingsSchema',
+    extension: 'json',
+    name: 'dataKeySettingsSchema'
+  }
+];
+
+const actionWriteMap = [
+  {
+    property: 'customFunction',
+    extension: 'js'
+  },
+  {
+    property: 'customHtml',
+    extension: 'html'
+  },
+  {
+    property: 'customCss',
+    extension: 'css'
+  }
+  // {
+  //   property: 'showWidgetActionFunction',
+  //   extension: 'js',
+  // }
+];
+
+// Actions
 export const fetchAndSaveRemoteWidget = async (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
@@ -54,13 +100,12 @@ export const parseWidgetExport = async (widgetId) => {
 };
 
 export const publishLocalWidget = async (widgetId) => {
-  const outputAction = 'bundle';
-
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
-
+  const outputAction = 'bundle';
   let widgetJson = await getWidgetLocal(widgetJsonPath(widgetId));
+  const widgetName = widgetJson.name;
 
   // Process widget resources
   const resources = await processWidgetResources(widgetJson, outputAction);
@@ -95,53 +140,9 @@ export const publishLocalWidget = async (widgetId) => {
 
     // Update Local Widget Export
     await createFile(widgetJsonPath(widgetId), widgetJson);
-    console.log(chalk.green('🦉 Widget has successfully been published'));
+    console.log(chalk.green(`🦉 Widget ${widgetName} has successfully been published`));
   }
 };
-
-const resourcesWriteMap = [
-  {
-    extension: 'js',
-    property: 'controllerScript'
-  },
-  {
-    extension: 'html',
-    property: 'templateHtml'
-  },
-  {
-    extension: 'css',
-    property: 'templateCss'
-  },
-  {
-    extension: 'json',
-    property: 'settingsSchema',
-    name: 'settingsSchema'
-  },
-  {
-    extension: 'json',
-    property: 'dataKeySettingsSchema',
-    name: 'dataKeySettingsSchema'
-  }
-];
-
-const actionWriteMap = [
-  {
-    extension: 'js',
-    property: 'customFunction'
-  },
-  {
-    extension: 'html',
-    property: 'customHtml'
-  },
-  {
-    extension: 'css',
-    property: 'customCss'
-  },
-  {
-    extension: 'js',
-    property: 'showWidgetActionFunction'
-  }
-];
 
 const processActions = async (widgetJson, output) => {
   const actionsFormatted = JSON.parse(widgetJson.descriptor.defaultConfig);

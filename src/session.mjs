@@ -11,7 +11,8 @@ export const getRefreshToken = () => {
 };
 
 export const getActiveWidget = () => {
-  return localStorage.getItem('widgetId').trim();
+  const widgetId = localStorage.getItem('widgetId');
+  return widgetId ? widgetId.trim() : widgetId;
 };
 
 export default localStorage;
