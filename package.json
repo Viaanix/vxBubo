@@ -4,7 +4,9 @@
   "description": "Your guide to develop Thingsboard Widgets locally",
   "type": "module",
   "main": "index.mjs",
-  "bin": "./index.mjs",
+  "bin": {
+    "vx-bubo": "index.mjs"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Viaanix/vxBubo.git"
@@ -15,6 +17,11 @@
     "url": "https://github.com/Viaanix/vxBubo/issues"
   },
   "homepage": "https://github.com/Viaanix/vxBubo#readme",
+  "keywords": [
+    "cli",
+    "thingsboard",
+    "widget"
+  ],
   "scripts": {
     "lint": "eslint --ext .js,.mjs src/",
     "lint-fix": "eslint --ext .js,.mjs --fix src/",
