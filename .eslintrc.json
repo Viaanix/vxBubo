@@ -10,7 +10,7 @@
         "ecmaVersion": "latest",
         "sourceType": "module"
     },
-//    "ignorePatterns": [".scratch/**/*", "widgets/**/*"],
+    "ignorePatterns": [".bubo/**/*"],
     "rules": {
         "semi": [2, "always"]
     }

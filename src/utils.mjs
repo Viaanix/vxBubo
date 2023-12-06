@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { tbHost } from '../index.mjs';
+import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
 
 export const authHeaders = (token) => {
   return {
@@ -11,15 +11,19 @@ export const authHeaders = (token) => {
   };
 };
 
-export const fetchHandler = async (url, params) => {
+export const fetchHandler = async (url, params = {}) => {
   // Check if the token is expired or will expire soon refresh token.
   if (isTokenExpired()) {
     console.log('Token is expired, refreshing..');
     await refreshToken();
   }
-  // TODO : Improve dis.
+  // TODO : Improve this.
   const auth = authHeaders();
-  params.headers = { ...auth?.headers, ...params?.headers };
+  if (params?.headers) {
+    params.headers = { ...auth.headers, ...params?.headers };
+  } else {
+    params.headers = { ...auth.headers };
+  }
   return await fetch(url, { ...params });
 };
 
@@ -40,8 +44,10 @@ export const isTokenExpired = () => {
 };
 
 export const refreshToken = async () => {
+  console.log('refreshing token...');
   const params = {
     headers: {
+      Authorization: getToken(),
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
@@ -50,16 +56,17 @@ export const refreshToken = async () => {
       refreshToken: getRefreshToken()
     })
   };
-
-  const request = await fetch(`${tbHost()}/api/auth/token`, { ...authHeaders(), ...params });
-  const response = await request.json();
-  if (response.token) {
-    localStorage.setItem('token', `Bearer ${response.token}`);
+  const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
+  if (request.status === 200) {
+    const response = await request.json();
+    if (response.token) {
+      localStorage.setItem('token', `Bearer ${response.token}`);
+    }
+    if (response.refreshToken) {
+      localStorage.setItem('refreshToken', response.refreshToken);
+    }
   }
-  if (response.refreshToken) {
-    localStorage.setItem('refreshToken', response.refreshToken);
-  }
-  // console.log('refreshToken => ', response);
+  return getToken();
 };
 
 export const getUserRefreshToken = async () => {
@@ -75,7 +82,7 @@ export const getUserRefreshToken = async () => {
 export const validToken = async (token) => {
   token = token || getToken();
   if (!token || !tbHost()) {
-    // console.debug('No Token');
+    console.debug('No Token');
     return false;
   }
   const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
@@ -83,11 +90,11 @@ export const validToken = async (token) => {
   if (request.status !== 200) {
     console.log('testToken Failed =>', request.status, response.message);
     // TODO: Abstract this away, no localStorage direct calls
-    // Remove token if failed/expired
-    localStorage.removeItem('token');
-    return false;
+    // Attempt to refresh token
+    token = await refreshToken();
+    return token !== null;
   }
-  return true;
+  return request.status === 200;
 };
 
 export const formatJson = (data) => {
@@ -134,4 +141,56 @@ export const getLocalFile = async (filePath) => {
 export const getWidgetLocal = async (widgetPath) => {
   const widgetJsonRaw = await getLocalFile(widgetPath);
   return JSON.parse(widgetJsonRaw);
+};
+
+export const discoverLocalWidgetJsons = async () => {
+  const widgetJsonDir = path.join(scratchPath, 'widgets');
+  const localWidgets = [];
+
+  await Promise.all(
+    fs.readdirSync(widgetJsonDir).map(async (file) => {
+      if (!file.includes('bak')) {
+        const fileExt = path.extname(file);
+        const widgetJsonPath = path.join(widgetJsonDir, file);
+
+        if (fileExt === '.json') {
+          const widgetJson = await getWidgetLocal(widgetJsonPath);
+          const widgetPath = path.join(localWidgetPath, widgetJson.name);
+          const stats = fs.statSync(widgetJsonPath);
+          const payload = {
+            name: widgetJson.name,
+            id: file.split('.')[0],
+            jsonPath: widgetJsonPath,
+            widgetPath,
+            modified: stats.mtime
+          };
+          localWidgets.push(payload);
+        }
+      }
+    })
+  );
+  return localWidgets;
+};
+
+export const findLocalWidgetsWithModifiedAssets = async () => {
+  const localWidgets = await discoverLocalWidgetJsons();
+
+  return await Promise.all(
+    localWidgets.map(async (widget) => {
+      const widgetPath = path.join(localWidgetPath, widget.name);
+      if (await checkPath(widgetPath)) {
+        const widgetFiles = await fs.readdirSync(widgetPath, { recursive: true });
+
+        for (const widgetAsset of widgetFiles) {
+          const widgetAssetPath = path.join(widgetPath, widgetAsset);
+          const stats = fs.statSync(widgetAssetPath);
+
+          if (stats.mtime > widget.modified) {
+            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
+          }
+        }
+      }
+      return widget;
+    })
+  );
 };
