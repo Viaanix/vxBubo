@@ -57,7 +57,7 @@ export const refreshToken = async () => {
     })
   };
   const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
-  if (request.status !== 200) {
+  if (request.status === 200) {
     const response = await request.json();
     if (response.token) {
       localStorage.setItem('token', `Bearer ${response.token}`);
@@ -65,8 +65,8 @@ export const refreshToken = async () => {
     if (response.refreshToken) {
       localStorage.setItem('refreshToken', response.refreshToken);
     }
-    return getToken();
   }
+  return getToken();
 };
 
 export const getUserRefreshToken = async () => {
