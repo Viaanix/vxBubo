@@ -43,8 +43,24 @@ export const isTokenExpired = () => {
   return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
 };
 
-export const refreshToken = async () => {
+
+// TODO: Dont like this.. there has to be a better way
+let tokenRefreshInProgress = false;
+let activeTokenRefresh = false;
+export const  refreshToken = async () => {
+  if (tokenRefreshInProgress) {
+    console.log('token refresh in progress, returning active token refresh');
+    return activeTokenRefresh
+  } else {
+    console.log('Lets Refresh the token!');
+    activeTokenRefresh = refreshUserToken();
+    return activeTokenRefresh
+  }
+}
+
+export const refreshUserToken = async () => {
   console.log('refreshing token...');
+  tokenRefreshInProgress = true;
   const params = {
     headers: {
       Authorization: getToken(),
@@ -66,6 +82,7 @@ export const refreshToken = async () => {
       localStorage.setItem('refreshToken', response.refreshToken);
     }
   }
+  tokenRefreshInProgress = false;
   return getToken();
 };
 
@@ -82,18 +99,20 @@ export const getUserRefreshToken = async () => {
 export const validToken = async (token) => {
   token = token || getToken();
   if (!token || !tbHost()) {
-    console.debug('No Token');
+    console.debug('No Token found');
     return false;
   }
   const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
   const response = await request.json();
   if (request.status !== 200) {
-    console.log('testToken Failed =>', request.status, response.message);
+    console.log('Token Failed, attempting to refresh =>', request.status, response.message);
     // TODO: Abstract this away, no localStorage direct calls
     // Attempt to refresh token
     token = await refreshToken();
+    console.log(`Token Refresh Result => ${token}`)
     return token !== null;
   }
+  // console.log(`Valid Token Result => `, request)
   return request.status === 200;
 };
 

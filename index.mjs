@@ -7,8 +7,7 @@ import {
   promptGetWidget,
   promptPublishModifiedWidgets
 } from './src/prompt.mjs';
-import { refreshToken, validToken } from './src/utils.mjs';
-import { getToken } from './src/session.mjs';
+import { validToken } from './src/utils.mjs';
 import path from 'path';
 import { cosmiconfig } from 'cosmiconfig';
 

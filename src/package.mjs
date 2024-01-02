@@ -43,6 +43,14 @@ const resourcesWriteMap = [
     property: 'dataKeySettingsSchema',
     extension: 'json',
     name: 'dataKeySettingsSchema'
+  },
+  {
+    property: 'image',
+    extension: 'png'
+  },
+  {
+    property: 'defaultConfig',
+    extension: 'json'
   }
 ];
 
@@ -100,6 +108,10 @@ export const parseWidgetExport = async (widgetId) => {
 };
 
 export const publishLocalWidget = async (widgetId) => {
+  const message = ' 🖕 NO PUBLISHING OF WIDGETS YET';
+  console.log(message);
+  throw new Error(message);
+
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
@@ -162,7 +174,7 @@ const processActions = async (widgetJson, output) => {
           const actionPath = path.join(localWidgetPath, widgetJson.name, 'actions', source, action.name);
           // Create widget action resources
           actionWriteMap.map(async (a) => {
-            const actionFileName = `${a.property}.${a.extension}`;
+            const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
             const actionFilePath = path.join(actionPath, actionFileName);
             if (isWrite) {
               if (!action[a.property]) return;
