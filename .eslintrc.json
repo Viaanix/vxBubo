@@ -12,6 +12,14 @@
     },
     "ignorePatterns": [".bubo/**/*"],
     "rules": {
-        "semi": [2, "always"]
+        "semi": [2, "always"],
+        "sort-imports":
+        [
+            "error",
+            {
+                "ignoreCase": true,
+                "ignoreDeclarationSort": true
+            }
+        ]
     }
 }

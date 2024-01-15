@@ -1,17 +1,18 @@
 import path from 'path';
 import fs from 'node:fs';
 import { finished } from 'stream/promises';
+
+import chalk from 'chalk';
 import {
   checkPath,
   createFile,
   formatJson,
   getLocalFile,
   getWidgetLocal,
-  validatePath,
-  fetchHandler
+  validatePath
 } from './utils.mjs';
 import { localWidgetPath, scratchPath, tbHost } from '../index.mjs';
-import chalk from 'chalk';
+import { getWidgetByID, publishWidget } from './api/core.mjs';
 
 // Helpers
 export const widgetJsonPath = (widgetId) => {
@@ -71,7 +72,7 @@ export const fetchAndSaveRemoteWidget = async (widgetId) => {
     throw new Error('Specify a widgetId');
   }
 
-  const request = await fetchHandler(`${tbHost()}/api/widgetType/${widgetId}`);
+  const request = await getWidgetByID(widgetId);
 
   if (request.ok) {
     await validatePath(path.join(scratchPath, 'widgets'));
@@ -122,15 +123,15 @@ export const publishLocalWidget = async (widgetId) => {
 
   // await createFile(path.join(widgetPath, 'test.json'), widgetJson);
 
-  const params = {
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    method: 'POST',
-    body: widgetJson
-  };
-  const request = await fetchHandler(`${tbHost()}/api/widgetType`, params);
+  // const params = {
+  //   headers: {
+  //     Accept: 'application/json',
+  //     'Content-Type': 'application/json'
+  //   },
+  //   method: 'POST',
+  //   body: widgetJson
+  // };
+  const request = await publishWidget(widgetJson);
   if (request.status === 200) {
     // const response = await request.json();
     // console.log(response);

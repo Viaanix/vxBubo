@@ -1,19 +1,17 @@
-import { input, select, confirm, checkbox } from '@inquirer/prompts';
+import { checkbox, confirm, input, select } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import {
-  checkPath,
-  findLocalWidgetsWithModifiedAssets,
-  getUserRefreshToken,
-  getWidgetLocal,
-  validToken
-} from './utils.mjs';
-import localStorage, { getActiveWidget } from './session.mjs';
-import { scratchPath, tbHost } from '../index.mjs';
 import chalk from 'chalk';
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './package.mjs';
-
+import { checkTokenStatus } from './api/auth.mjs';
+import {
+  checkPath,
+  findLocalWidgetsWithModifiedAssets,
+  getWidgetLocal
+} from './utils.mjs';
+import localStorage, { getActiveWidget, setUserAuthToken } from './session.mjs';
+import { scratchPath, tbHost } from '../index.mjs';
 const clearPrevious = { clearPromptOnDone: true };
 
 export const goodbye = () => {
@@ -22,7 +20,7 @@ export const goodbye = () => {
 };
 
 export const promptMainMenu = async () => {
-  const disableToken = await validToken() === false;
+  const disableToken = await checkTokenStatus() === false;
   const disableHost = tbHost() === null;
 
   const answer = await select({
@@ -81,12 +79,12 @@ export const prompForToken = async () => {
   const clip = clipboard.readSync();
   try {
     const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
-    await validToken(token);
-    localStorage.setItem('token', token);
-    await getUserRefreshToken();
-  } catch {
+    await checkTokenStatus(token);
+    setUserAuthToken(token);
+    await getUserRefreshToken(token);
+  } catch (err) {
     const message = 'Token is not valid.';
-    console.log(message);
+    console.log(message, err);
     throw new Error(message);
   }
   return promptMainMenu();
@@ -137,9 +135,9 @@ export const promptPublishModifiedWidgets = async () => {
 
   const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
   if (modifiedWidgets) {
-    await Promise.all(
-      modifiedWidgets.map(async (widget) => {
-        return await publishLocalWidget(widget.id);
+    Promise.all(
+      modifiedWidgets.map((widget) => {
+        return publishLocalWidget(widget.id);
       })
     );
   } else {
@@ -156,9 +154,9 @@ export const promptPublishLocalWidgets = async () => {
     choices: widgetChoices
   }, clearPrevious);
 
-  await Promise.all(
-    answer.map(async (widget) => {
-      return await publishLocalWidget(widget.id);
+  Promise.all(
+    answer.map((widget) => {
+      return publishLocalWidget(widget.id);
     })
   );
   goodbye();

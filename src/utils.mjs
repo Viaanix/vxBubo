@@ -1,101 +1,110 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getRefreshToken, getToken } from './session.mjs';
+import { getToken } from './session.mjs';
 import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
+import { checkUserToken } from './api/core.mjs';
+import { checkTokenStatus } from './api/auth.mjs';
 
-export const authHeaders = (token) => {
-  return {
-    headers: {
-      Authorization: token || getToken()
-    }
-  };
-};
+// export const authHeaders = (token) => {
+//   return {
+//     headers: {
+//       Authorization: token || getToken()
+//     }
+//   };
+// };
+//
+// export const fetchHandler = async (url, params = {}) => {
+//   // Check if the token is expired or will expire soon refresh token.
+//   if (isTokenExpired()) {
+//     console.log('Token is expired, refreshing..');
+//     await refreshToken();
+//   }
+//   // TODO : Improve this.
+//   const auth = authHeaders();
+//   if (params?.headers) {
+//     params.headers = { ...auth.headers, ...params?.headers };
+//   } else {
+//     params.headers = { ...auth.headers };
+//   }
+//   return await fetch(url, { ...params });
+// };
 
-export const fetchHandler = async (url, params = {}) => {
-  // Check if the token is expired or will expire soon refresh token.
-  if (isTokenExpired()) {
-    console.log('Token is expired, refreshing..');
-    await refreshToken();
-  }
-  // TODO : Improve this.
-  const auth = authHeaders();
-  if (params?.headers) {
-    params.headers = { ...auth.headers, ...params?.headers };
-  } else {
-    params.headers = { ...auth.headers };
-  }
-  return await fetch(url, { ...params });
-};
+// export const parseJwt = (token) => {
+//   if (!token) return null;
+//   token = token?.replace('Bearer', '').trim();
+//   return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+// };
 
-export const parseJwt = (token) => {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-};
+// const getParsedToken = (token) => {
+//   token = token || getToken();
+//   return parseJwt(token);
+// };
 
-const getParsedToken = (token) => {
-  token = token || getToken();
-  return parseJwt(token.replace('Bearer', '').trim());
-};
+// export const isTokenExpired = () => {
+//   const parsedToken = getParsedToken();
+//   if (!parsedToken) return true;
+//   // Fudge factor, will it expire in 5 minutes ?
+//   const fudge = 5 * 60;
+//   return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
+// };
 
-export const isTokenExpired = () => {
-  const parsedToken = getParsedToken();
-  // Fudge factor, will it expire in 5 minutes ?
-  const fudge = 5 * 60;
-  return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
-};
+// // TODO: Dont like this.. there has to be a better way
+// let tokenRefreshInProgress = false;
+// let activeTokenRefresh = false;
 
-export const refreshToken = async () => {
-  console.log('refreshing token...');
-  const params = {
-    headers: {
-      Authorization: getToken(),
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      refreshToken: getRefreshToken()
-    })
-  };
-  const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
-  if (request.status === 200) {
-    const response = await request.json();
-    if (response.token) {
-      localStorage.setItem('token', `Bearer ${response.token}`);
-    }
-    if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
-    }
-  }
-  return getToken();
-};
+// export const refreshToken = async () => {
+//   if (tokenRefreshInProgress) {
+//     console.log('token refresh in progress, returning active token refresh');
+//     return activeTokenRefresh;
+//   } else {
+//     console.log('Lets Refresh the token!');
+//     activeTokenRefresh = refreshUserToken();
+//     return activeTokenRefresh;
+//   }
+// };
 
-export const getUserRefreshToken = async () => {
-  const parsedToken = getParsedToken();
-  const tokenRequest = await fetch(`${tbHost()}/api/user/${parsedToken.userId}/token`, { ...authHeaders() });
-  const tokenResponse = await tokenRequest.json();
-  if (tokenResponse.refreshToken) {
-    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
-  }
-};
+// export const refreshUserToken = async () => {
+//   console.log('refreshing token...');
+//   tokenRefreshInProgress = true;
+//   const params = {
+//     headers: {
+//       Authorization: getToken(),
+//       Accept: 'application/json',
+//       'Content-Type': 'application/json'
+//     },
+//     method: 'POST',
+//     body: JSON.stringify({
+//       refreshToken: getRefreshToken()
+//     })
+//   };
+//   const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
+//   if (request.status === 200) {
+//     const response = await request.json();
+//     if (response.token) {
+//       localStorage.setItem('token', `Bearer ${response.token}`);
+//     }
+//     if (response.refreshToken) {
+//       localStorage.setItem('refreshToken', response.refreshToken);
+//     }
+//   }
+//   tokenRefreshInProgress = false;
+//   // TODO: refactor anything that calls this to not use the return and call local storage.
+//   return getToken();
+// };
 
-// TODO: rename
-export const validToken = async (token) => {
-  token = token || getToken();
-  if (!token || !tbHost()) {
-    console.debug('No Token');
-    return false;
-  }
-  const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
-  const response = await request.json();
-  if (request.status !== 200) {
-    console.log('testToken Failed =>', request.status, response.message);
-    // TODO: Abstract this away, no localStorage direct calls
-    // Attempt to refresh token
-    token = await refreshToken();
-    return token !== null;
-  }
-  return request.status === 200;
-};
+// export const getUserRefreshToken = async () => {
+//   const parsedToken = getParsedToken();
+//   const tokenRequest = await fetch(`${tbHost()}/api/user/${parsedToken.userId}/token`, { ...authHeaders() });
+//   const tokenResponse = await tokenRequest.json();
+//   if (tokenResponse.refreshToken) {
+//     localStorage.setItem('refreshToken', tokenResponse.refreshToken);
+//   }
+// };
+
+// // TODO: rename
+// export const validToken = async (token) => {
+//   return await checkTokenStatus(token);
+// };
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
