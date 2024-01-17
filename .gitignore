@@ -25,5 +25,6 @@ node_modules/**/*
 # Package
 .env
 .bubo/
+logs/
 widgets/
 bubo.config.json

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
+import path from 'path';
 import { Command } from 'commander';
+import { cosmiconfig } from 'cosmiconfig';
 import {
   prompForToken,
   promptMainMenu,
   promptPublishLocalWidgets,
-  promptGetWidget,
-  promptPublishModifiedWidgets
+  promptPublishModifiedWidgets,
+  promptWidgetGetInteractive
 } from './src/prompt.mjs';
-import { refreshToken, validToken } from './src/utils.mjs';
-import { getToken } from './src/session.mjs';
-import path from 'path';
-import { cosmiconfig } from 'cosmiconfig';
+import { checkTokenStatus } from './src/api/auth.mjs';
+import { findLocalWidgetsSourceIds } from './src/widget.mjs';
 
 const rootProjectPath = process.cwd();
 const explorer = await cosmiconfig('bubo', { sync: true, searchPlaces: ['bubo.config.json'] }).search();
@@ -54,7 +54,7 @@ if (options.token) {
 }
 
 // Check for a token to continue
-if (!validToken()) {
+if (!checkTokenStatus()) {
   await prompForToken();
 }
 
@@ -64,7 +64,11 @@ if (options.publishModified) {
 
 // Get Widget from ThingsBoard
 if (options.get) {
-  await promptGetWidget();
+  await promptWidgetGetInteractive();
+}
+
+if (options.getWidgetSources) {
+  await findLocalWidgetsSourceIds();
 }
 
 // Publish Local Widget?

@@ -1,101 +1,9 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
+import { scratchPath, localWidgetPath } from '../index.mjs';
+import { logger } from './logger.mjs';
 
-export const authHeaders = (token) => {
-  return {
-    headers: {
-      Authorization: token || getToken()
-    }
-  };
-};
-
-export const fetchHandler = async (url, params = {}) => {
-  // Check if the token is expired or will expire soon refresh token.
-  if (isTokenExpired()) {
-    console.log('Token is expired, refreshing..');
-    await refreshToken();
-  }
-  // TODO : Improve this.
-  const auth = authHeaders();
-  if (params?.headers) {
-    params.headers = { ...auth.headers, ...params?.headers };
-  } else {
-    params.headers = { ...auth.headers };
-  }
-  return await fetch(url, { ...params });
-};
-
-export const parseJwt = (token) => {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-};
-
-const getParsedToken = (token) => {
-  token = token || getToken();
-  return parseJwt(token.replace('Bearer', '').trim());
-};
-
-export const isTokenExpired = () => {
-  const parsedToken = getParsedToken();
-  // Fudge factor, will it expire in 5 minutes ?
-  const fudge = 5 * 60;
-  return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
-};
-
-export const refreshToken = async () => {
-  console.log('refreshing token...');
-  const params = {
-    headers: {
-      Authorization: getToken(),
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      refreshToken: getRefreshToken()
-    })
-  };
-  const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
-  if (request.status === 200) {
-    const response = await request.json();
-    if (response.token) {
-      localStorage.setItem('token', `Bearer ${response.token}`);
-    }
-    if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
-    }
-  }
-  return getToken();
-};
-
-export const getUserRefreshToken = async () => {
-  const parsedToken = getParsedToken();
-  const tokenRequest = await fetch(`${tbHost()}/api/user/${parsedToken.userId}/token`, { ...authHeaders() });
-  const tokenResponse = await tokenRequest.json();
-  if (tokenResponse.refreshToken) {
-    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
-  }
-};
-
-// TODO: rename
-export const validToken = async (token) => {
-  token = token || getToken();
-  if (!token || !tbHost()) {
-    console.debug('No Token');
-    return false;
-  }
-  const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
-  const response = await request.json();
-  if (request.status !== 200) {
-    console.log('testToken Failed =>', request.status, response.message);
-    // TODO: Abstract this away, no localStorage direct calls
-    // Attempt to refresh token
-    token = await refreshToken();
-    return token !== null;
-  }
-  return request.status === 200;
-};
+const log = logger.child({ prefix: 'utils' });
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
@@ -113,16 +21,21 @@ export const checkPath = async (dir) => {
 export const validatePath = async (dirname) => {
   if (!await checkPath(dirname)) {
     fs.mkdirSync(dirname, { recursive: true });
-    console.debug(`Cannot find ${dirname}, creating it.`);
+    log.error(`Cannot find ${dirname}, creating it.`);
   }
 };
 
 export const createFile = async (filePath, data) => {
+  // If object is passed convert to JSON for writing.
+  if (data instanceof Object) {
+    data = formatJson(data);
+  }
   // Validate path before creating a file
   await validatePath(path.dirname(filePath));
   try {
     fs.writeFileSync(filePath, data);
   } catch (error) {
+    log.error(error);
     throw new Error(error);
   }
 };
@@ -132,7 +45,7 @@ export const getLocalFile = async (filePath) => {
   try {
     fileRaw = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
-    console.error(error);
+    log.error(error);
     throw new Error(error);
   }
   return fileRaw;
@@ -194,3 +107,34 @@ export const findLocalWidgetsWithModifiedAssets = async () => {
     })
   );
 };
+
+/**
+ * Performs a deep merge of an array of objects
+ * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
+ */
+export function mergeDeep (...objects) {
+  // console.log('objects =>', objects);
+  const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
+  const objectTest = objects.filter((obj) => isObject(obj));
+  // console.log('objectTest =>', objectTest);
+
+  if (objectTest.length !== objects.length) {
+    throw new Error('Can only merge objects');
+  }
+  const target = {};
+
+  objects.forEach(source => {
+    Object.keys(source).forEach(key => {
+      const targetValue = target[key];
+      const sourceValue = source[key];
+      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+        target[key] = targetValue.concat(sourceValue);
+      } else if (isObject(targetValue) && isObject(sourceValue)) {
+        target[key] = mergeDeep(Object.assign({}, targetValue), sourceValue);
+      } else {
+        target[key] = sourceValue;
+      }
+    });
+  });
+  return target;
+}
