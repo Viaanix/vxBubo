@@ -68,7 +68,7 @@ export const discoverLocalWidgetJsons = async () => {
 
         if (fileExt === '.json') {
           const widgetJson = await getWidgetLocal(widgetJsonPath);
-          const widgetPath = path.join(localWidgetPath, widgetJson.name);
+          const widgetPath = path.join(localWidgetPath, widgetJson.bundleAlias, widgetJson.name);
           const stats = fs.statSync(widgetJsonPath);
           const payload = {
             name: widgetJson.name,
@@ -90,14 +90,11 @@ export const findLocalWidgetsWithModifiedAssets = async () => {
 
   return await Promise.all(
     localWidgets.map(async (widget) => {
-      const widgetPath = path.join(localWidgetPath, widget.name);
-      if (await checkPath(widgetPath)) {
-        const widgetFiles = await fs.readdirSync(widgetPath, { recursive: true });
-
+      if (await checkPath(widget.widgetPath)) {
+        const widgetFiles = await fs.readdirSync(widget.widgetPath, { recursive: true });
         for (const widgetAsset of widgetFiles) {
-          const widgetAssetPath = path.join(widgetPath, widgetAsset);
+          const widgetAssetPath = path.join(widget.widgetPath, widgetAsset);
           const stats = fs.statSync(widgetAssetPath);
-
           if (stats.mtime > widget.modified) {
             if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
           }

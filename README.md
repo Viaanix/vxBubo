@@ -40,12 +40,12 @@ This tool is in early development and is not ready for production use. Use at yo
 ## Menu Options
 ```bash
 ? 🦉 What would you like to do? (Use arrow keys)
-> Set ThingsBoard JWT token                     
-  Get Widget                                    
-  Publish Widgets                                
-  Publish Modified Widgets                      
-  Clear tokens and active widget id             
-🎟️ Copy JWT token from ThingsBoard              
+❯ Set ThingsBoard JWT token
+  Get Widget Interactive
+  Get Widget Sources
+  Publish Widgets
+  Publish Modified Widgets
+🎟️ Copy JWT token from ThingsBoard        
 ```
 
 ### Set ThingsBoard JWT token
@@ -63,8 +63,11 @@ This will allow you to set your ThingsBoard JWT token in the config file. This t
 
 ### Get Widget  
 ```bash
-? 🦉 Would you like to get widget My Awesome Widget (00000000-0000-0000-0000-000000000000) ? (Y/n)
-
+? 🦉 How would you like to GET a widget? (Use arrow keys)
+❯ Last Widget (00000000-0000-0000-0000-000000000000)
+  By widgetId
+  From Bundle
+💾 Use the widgetId of the previous GET
 ```
 Download a local widget for development. This will create a directory in the `widgetWorkingDirectory` named after the widget and download the widget files into that directory.
 
@@ -72,7 +75,6 @@ Download a local widget for development. This will create a directory in the `wi
 ### Publish Widget    
 ```bash
 ? 🦉 Would you like to publish widget My Awesome Widget (00000000-0000-0000-0000-000000000000) ? (Y/n)
-
 ```
 Package and publish a widget to ThingsBoard. This will create a new widget json and publish it to ThingsBoard.
 

@@ -199,7 +199,8 @@ export const promptPublishLocalWidgets = async () => {
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
-    choices: widgetChoices
+    choices: widgetChoices,
+    loop: false
   }, clearPrevious);
 
   await Promise.all(
@@ -216,7 +217,7 @@ const getLocalWidgetChoices = async () => {
   return localWidgets.map((widget) => {
     let modifiedAgo = '';
     if (widget?.assetsModified) {
-      modifiedAgo = chalk.italic.dim.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
+      modifiedAgo = chalk.italic.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
     }
     return { name: `${widget.name} ${modifiedAgo} `, value: widget };
   });
