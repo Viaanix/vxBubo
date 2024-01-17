@@ -7,8 +7,7 @@ import {
   promptGetWidget,
   promptPublishModifiedWidgets
 } from './src/prompt.mjs';
-import { refreshToken, validToken } from './src/utils.mjs';
-import { getToken } from './src/session.mjs';
+import { checkTokenStatus } from './src/api.mjs';
 import path from 'path';
 import { cosmiconfig } from 'cosmiconfig';
 
@@ -54,7 +53,7 @@ if (options.token) {
 }
 
 // Check for a token to continue
-if (!validToken()) {
+if (!checkTokenStatus()) {
   await prompForToken();
 }
 

@@ -3,16 +3,16 @@ import clipboard from 'clipboardy';
 import {
   checkPath,
   findLocalWidgetsWithModifiedAssets,
-  getUserRefreshToken,
-  getWidgetLocal,
-  validToken
+  getWidgetLocal
+
 } from './utils.mjs';
 import localStorage, { getActiveWidget } from './session.mjs';
 import { scratchPath, tbHost } from '../index.mjs';
 import chalk from 'chalk';
 import { formatDistanceToNow } from 'date-fns';
 import path from 'path';
-import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './package.mjs';
+import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './widget.mjs';
+import { checkTokenStatus, getUserRefreshToken } from './api.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
 
@@ -22,7 +22,7 @@ export const goodbye = () => {
 };
 
 export const promptMainMenu = async () => {
-  const disableToken = await validToken() === false;
+  const disableToken = await checkTokenStatus() === false;
   const disableHost = tbHost() === null;
 
   const answer = await select({
@@ -81,13 +81,13 @@ export const prompForToken = async () => {
   const clip = clipboard.readSync();
   try {
     const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
-    await validToken(token);
+    await checkTokenStatus(token);
     localStorage.setItem('token', token);
     await getUserRefreshToken();
-  } catch {
-    const message = 'Token is not valid.';
-    console.log(message);
-    throw new Error(message);
+  } catch (error) {
+    // const message = 'Token is not valid.';
+    console.log(error);
+    // throw new Error(message);
   }
   return promptMainMenu();
 };
