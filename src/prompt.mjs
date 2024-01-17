@@ -6,8 +6,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { scratchPath, tbHost } from '../index.mjs';
 import { checkPath, findLocalWidgetsWithModifiedAssets, getWidgetLocal } from './utils.mjs';
 import { getActiveWidget, setUserAuthToken, setWidgetId } from './session.mjs';
-import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './widget.mjs';
-import { checkTokenStatus, getUserRefreshToken } from './api/auth.mjs';
+import {
+  fetchAndParseRemoteWidget,
+  fetchAndSaveRemoteWidget,
+  parseWidgetExport,
+  publishLocalWidget
+} from './widget.mjs';
+import { checkTokenStatus, getParsedToken, getUserRefreshToken } from './api/auth.mjs';
+import { getAllWidgetBundles, getAllWidgetByBundleAlias } from './api/widget.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
 
@@ -36,9 +42,9 @@ export const promptMainMenu = async () => {
         disabled: (disableHost || disableToken)
       },
       {
-        name: 'Get Widget Bundles',
-        value: 'getBundles',
-        description: '⚡️ Get a widget from ThingsBoard using the widgetId',
+        name: 'Get Widget Interactive',
+        value: 'getInteractive',
+        description: '⚡️ Get widget(s) using the interactive prompt',
         disabled: (disableHost || disableToken)
       },
       {
@@ -139,14 +145,74 @@ export const promptGetWidget = async () => {
   goodbye();
 };
 
+export const promptWidgetGetInteractive = async () => {
+  const promptGetAction = await select({
+    message: '🦉 How would you like to GET a widget?',
+    choices: [
+      {
+        name: 'Last Widget',
+        value: 'last',
+        description: 'Use the widgetId of the previous GET'
+      },
+      {
+        name: 'By widgetId',
+        value: 'widgetId',
+        description: 'Enter a new widgetId to GET'
+      },
+      {
+        name: 'From Bundle',
+        value: 'bundle',
+        description: 'Browse and select a widget(s) from a Widget Bundle'
+      }
+    ]
+  }, clearPrevious);
+
+  if (promptGetAction === 'bundle') {
+    const parsedToken = getParsedToken();
+
+    const widgetBundles = await getAllWidgetBundles();
+    const bundleChoices = widgetBundles.data.map(bundle => {
+      return {
+        name: bundle.title,
+        value: { bundleAlias: bundle.alias, isSystem: parsedToken.tenantId !== bundle.tenantId.id },
+        description: bundle.description
+      };
+    });
+    const promptSelectBundle = await select({
+      message: '🦉 Select a bundle',
+      loop: false,
+      choices: bundleChoices.sort((a, b) => a.name.localeCompare(b.name))
+    });
+
+    const bundleWidgets = await getAllWidgetByBundleAlias(promptSelectBundle.bundleAlias, promptSelectBundle.isSystem);
+    const widgetChoices = bundleWidgets.data.map(widget => {
+      return {
+        name: widget.name,
+        value: widget.id.id,
+        description: widget.description
+      };
+    });
+    const widgetSelection = await checkbox({
+      message: '🦉 Select widget(s)',
+      loop: false,
+      choices: widgetChoices.sort((a, b) => a.name.localeCompare(b.name))
+    });
+
+    await Promise.all(
+      widgetSelection.map((widgetId) => fetchAndParseRemoteWidget(widgetId))
+    );
+    goodbye();
+  }
+};
+
 export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
   const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
   if (modifiedWidgets) {
     await Promise.all(
-      modifiedWidgets.map(async (widget) => {
-        return await publishLocalWidget(widget.id);
+      modifiedWidgets.map((widget) => {
+        return publishLocalWidget(widget.id);
       })
     );
   } else {

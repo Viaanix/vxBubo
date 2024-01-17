@@ -12,3 +12,7 @@ export const publishWidget = async (widgetJson) => {
 export const getAllWidgetBundles = async () => {
   return await api.get('/api/widgetsBundles');
 };
+
+export const getAllWidgetByBundleAlias = async (bundleAlias, isSystem) => {
+  return await api.get(`/api/widgetTypesInfos?isSystem=${isSystem}&bundleAlias=${bundleAlias}`);
+};

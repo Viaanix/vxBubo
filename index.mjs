@@ -2,7 +2,14 @@
 import path from 'path';
 import { Command } from 'commander';
 import { cosmiconfig } from 'cosmiconfig';
-import { prompForToken, promptMainMenu, promptPublishLocalWidgets, promptGetWidget, promptPublishModifiedWidgets } from './src/prompt.mjs';
+import {
+  prompForToken,
+  promptMainMenu,
+  promptPublishLocalWidgets,
+  promptGetWidget,
+  promptPublishModifiedWidgets,
+  promptWidgetGetInteractive
+} from './src/prompt.mjs';
 import { checkTokenStatus } from './src/api/auth.mjs';
 import { findLocalWidgetsSourceIds } from './src/widget.mjs';
 
@@ -59,6 +66,9 @@ if (options.publishModified) {
 // Get Widget from ThingsBoard
 if (options.get) {
   await promptGetWidget();
+}
+if (options.getInteractive) {
+  await promptWidgetGetInteractive();
 }
 
 if (options.getWidgetSources) {

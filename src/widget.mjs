@@ -65,6 +65,10 @@ const actionWriteMap = [
   }
 ];
 
+export const fetchAndParseRemoteWidget = async (widgetId) => {
+  await fetchAndSaveRemoteWidget(widgetId);
+  await parseWidgetExport(widgetId);
+};
 // Actions
 export const fetchAndSaveRemoteWidget = async (widgetId) => {
   try {
