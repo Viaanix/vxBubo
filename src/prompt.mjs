@@ -94,7 +94,7 @@ export const prompForToken = async () => {
 
 export const promptWidgetGetInteractive = async () => {
   const widgetId = await getActiveWidget();
-  const widgets = [];
+  let widgets = [];
 
   const choices = [
     {
@@ -165,7 +165,7 @@ export const promptWidgetGetInteractive = async () => {
       loop: false,
       choices: widgetChoices.sort((a, b) => a.name.localeCompare(b.name))
     }, clearPrevious);
-    widgets.concat(widgetSelection);
+    widgets = [...widgets, ...widgetSelection];
   }
   try {
     await Promise.all(
