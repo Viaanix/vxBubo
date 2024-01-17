@@ -6,7 +6,6 @@ import {
   prompForToken,
   promptMainMenu,
   promptPublishLocalWidgets,
-  promptGetWidget,
   promptPublishModifiedWidgets,
   promptWidgetGetInteractive
 } from './src/prompt.mjs';
@@ -65,9 +64,6 @@ if (options.publishModified) {
 
 // Get Widget from ThingsBoard
 if (options.get) {
-  await promptGetWidget();
-}
-if (options.getInteractive) {
   await promptWidgetGetInteractive();
 }
 
