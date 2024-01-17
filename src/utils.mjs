@@ -1,19 +1,9 @@
 import path from 'path';
 import fs from 'fs';
-import { getToken } from './session.mjs';
 import { scratchPath, localWidgetPath } from '../index.mjs';
 import { logger } from './logger.mjs';
 
 const log = logger.child({ prefix: 'utils' });
-
-export const parseJwt = (token) => {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-};
-
-export const getParsedToken = (token) => {
-  token = token || getToken();
-  return parseJwt(token.replace('Bearer', '').trim());
-};
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
@@ -122,7 +112,6 @@ export const findLocalWidgetsWithModifiedAssets = async () => {
  * Performs a deep merge of an array of objects
  * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
  */
-
 export function mergeDeep (...objects) {
   // console.log('objects =>', objects);
   const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);

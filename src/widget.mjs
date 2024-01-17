@@ -1,19 +1,13 @@
 import path from 'path';
 import fs from 'node:fs';
-import {
-  checkPath,
-  createFile,
-  formatJson,
-  getLocalFile,
-  getWidgetLocal, mergeDeep,
-  validatePath
-} from './utils.mjs';
+import { glob } from 'glob';
+import { checkPath, createFile, formatJson, getLocalFile, getWidgetLocal, mergeDeep, validatePath } from './utils.mjs';
 import { localWidgetPath, scratchPath } from '../index.mjs';
 import chalk from 'chalk';
-import { getWidgetByID, publishWidget } from './api.mjs';
+import { getWidgetByID, publishWidget } from './api/widget.mjs';
 import { logger } from './logger.mjs';
 
-// const log = logger.child({ prefix: 'package' });
+const log = logger.child({ prefix: 'widget' });
 
 // Helpers
 const guardRequireWidgetId = (widgetId) => {
@@ -78,7 +72,7 @@ export const fetchAndSaveRemoteWidget = async (widgetId) => {
     await validatePath(path.join(scratchPath, 'widgets'));
     await createFile(widgetJsonPath(widgetId), formatJson(response.data));
   } catch (error) {
-    logger.error(error);
+    log.error(error);
     throw Error(error.message);
   }
 };
@@ -237,4 +231,21 @@ const processWidgetResources = async (widgetPath, widgetJson, output) => {
     })
   );
   return updatedResources;
+};
+
+export const findLocalWidgetsSourceIds = async () => {
+  const widgetFiles = await glob('**/widget.json', {
+    cwd: localWidgetPath,
+    root: ''
+  });
+  // console.log('findLocalWidgetsSourceIds =>', widgetFiles);
+
+  return await Promise.all(
+    widgetFiles.map(async (widget) => {
+      const localWidgetJsonPath = path.join(localWidgetPath, widget);
+      const localWidget = await getLocalFile(localWidgetJsonPath);
+      const localWidgetJson = JSON.parse(localWidget);
+      return await fetchAndSaveRemoteWidget(localWidgetJson.protected.id.id);
+    })
+  );
 };

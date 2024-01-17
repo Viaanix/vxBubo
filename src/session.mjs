@@ -1,5 +1,5 @@
 import { LocalStorage } from 'node-localstorage';
-import { api } from './api.mjs';
+import { api } from './api/api.mjs';
 import { logger } from './logger.mjs';
 
 const localStorage = new LocalStorage('./.bubo');
@@ -31,6 +31,11 @@ export const setUserAuthToken = (token) => {
 export const setUserRefreshToken = (token) => {
   log.info('💾 Setting refreshToken');
   localStorage.setItem('refreshToken', token);
+};
+
+export const setWidgetId = (widgetId) => {
+  log.info('💾 Setting widgetId');
+  localStorage.setItem('widgetId', widgetId);
 };
 
 export default localStorage;

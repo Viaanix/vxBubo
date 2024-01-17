@@ -1,18 +1,13 @@
+import path from 'path';
 import { input, select, confirm, checkbox } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
-import {
-  checkPath,
-  findLocalWidgetsWithModifiedAssets,
-  getWidgetLocal
-
-} from './utils.mjs';
-import localStorage, { getActiveWidget } from './session.mjs';
-import { scratchPath, tbHost } from '../index.mjs';
 import chalk from 'chalk';
 import { formatDistanceToNow } from 'date-fns';
-import path from 'path';
+import { scratchPath, tbHost } from '../index.mjs';
+import { checkPath, findLocalWidgetsWithModifiedAssets, getWidgetLocal } from './utils.mjs';
+import { getActiveWidget, setUserAuthToken, setWidgetId } from './session.mjs';
 import { fetchAndSaveRemoteWidget, parseWidgetExport, publishLocalWidget } from './widget.mjs';
-import { checkTokenStatus, getUserRefreshToken } from './api.mjs';
+import { checkTokenStatus, getUserRefreshToken } from './api/auth.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
 
@@ -38,6 +33,18 @@ export const promptMainMenu = async () => {
         name: 'Get Widget',
         value: 'get',
         description: '⚡️ Get a widget from ThingsBoard using the widgetId',
+        disabled: (disableHost || disableToken)
+      },
+      {
+        name: 'Get Widget Bundles',
+        value: 'getBundles',
+        description: '⚡️ Get a widget from ThingsBoard using the widgetId',
+        disabled: (disableHost || disableToken)
+      },
+      {
+        name: 'Get Widget Sources',
+        value: 'getWidgetSources',
+        description: '♻️ Download widget data for local widgets',
         disabled: (disableHost || disableToken)
       },
       {
@@ -82,7 +89,7 @@ export const prompForToken = async () => {
   try {
     const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
     await checkTokenStatus(token);
-    localStorage.setItem('token', token);
+    setUserAuthToken(token);
     await getUserRefreshToken();
   } catch (error) {
     // const message = 'Token is not valid.';
@@ -115,7 +122,7 @@ export const promptGetWidget = async () => {
       message: `🦉 What is the widget id you would like to ${chalk.bold.green('get')}?`
     }, clearPrevious);
     if (answer) {
-      localStorage.setItem('widgetId', answer.trim());
+      setWidgetId(answer.trim());
       widgetId = await getActiveWidget();
     }
   }
