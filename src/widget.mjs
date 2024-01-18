@@ -43,6 +43,11 @@ const resourcesWriteMap = [
     property: 'dataKeySettingsSchema',
     extension: 'json',
     name: 'dataKeySettingsSchema'
+  },
+  {
+    property: 'defaultConfig',
+    extension: 'json',
+    name: 'defaultConfig'
   }
 ];
 
@@ -61,7 +66,8 @@ const actionWriteMap = [
   },
   {
     property: 'showWidgetActionFunction',
-    extension: 'js'
+    extension: 'js',
+    name: 'showWidgetActionFunction'
   }
 ];
 
