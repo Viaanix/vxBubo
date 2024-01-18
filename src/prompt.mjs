@@ -1,4 +1,4 @@
-import { input, select, confirm, checkbox } from '@inquirer/prompts';
+import { checkbox, confirm, input, select } from '@inquirer/prompts';
 import clipboard from 'clipboardy';
 import chalk from 'chalk';
 import { formatDistanceToNow } from 'date-fns';
@@ -7,13 +7,20 @@ import { findLocalWidgetsWithModifiedAssets } from './utils.mjs';
 import { getActiveWidget, setUserAuthToken, setWidgetId } from './session.mjs';
 import { fetchAndParseRemoteWidget, publishLocalWidget } from './widget.mjs';
 import { checkTokenStatus, getParsedToken, getUserRefreshToken } from './api/auth.mjs';
-import { getAllWidgetBundles, getAllWidgetByBundleAlias } from './api/widget.mjs';
+import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from './api/widget.mjs';
+import { logger } from './logger.mjs';
 
 const clearPrevious = { clearPromptOnDone: true };
 
 export const goodbye = () => {
   console.log('🦉 Goodbye!');
   process.exit(1);
+};
+
+export const handlePromptError = (error) => {
+  if (!error.message.includes('User force closed the prompt')) {
+    logger.error(error);
+  }
 };
 
 export const promptMainMenu = async () => {
@@ -28,6 +35,12 @@ export const promptMainMenu = async () => {
         value: 'token',
         description: '🎟️ Copy JWT token from ThingsBoard',
         disabled: disableHost
+      },
+      {
+        name: 'Create Widget',
+        value: 'create',
+        description: 'Create a new widget in a Widget bundle',
+        disabled: (disableHost || disableToken)
       },
       {
         name: 'Get Widget Interactive',
@@ -93,39 +106,34 @@ export const prompForToken = async () => {
 };
 
 export const promptWidgetGetInteractive = async () => {
-  const widgetId = await getActiveWidget();
+  const widgetId = await getActiveWidget() || '';
   let widgets = [];
-
-  const choices = [
-    {
-      name: 'By widgetId',
-      value: 'newWidgetId',
-      description: '🔑 Enter a new widgetId to GET'
-    },
-    {
-      name: 'From Bundle',
-      value: 'bundle',
-      description: '🎁 Browse and select a widget(s) from a Widget Bundle'
-    }
-  ];
-  if (widgetId) {
-    choices.unshift({
-      name: `Last Widget (${widgetId})`,
-      value: 'last',
-      description: '💾 Use the widgetId of the previous GET'
-    });
-  }
 
   const promptGetAction = await select({
     message: '🦉 How would you like to GET a widget?',
-    choices
+    choices: [
+      {
+        name: `Last Widget (${widgetId})`,
+        value: 'last',
+        description: '💾 Use the widgetId of the previous GET',
+        disabled: !widgetId
+      },
+      {
+        name: 'By widgetId',
+        value: 'newWidgetId',
+        description: '🔑 Enter a new widgetId to GET'
+      },
+      {
+        name: 'From Widget Bundle',
+        value: 'bundle',
+        description: '🎁 Browse and select a widget(s) from a Widget Bundle'
+      }
+    ]
   }, clearPrevious);
 
   if (promptGetAction === 'last') {
     widgets.push(widgetId);
-  }
-
-  if (promptGetAction === 'newWidgetId') {
+  } else if (promptGetAction === 'newWidgetId') {
     const answer = await input({
       name: 'widgetId',
       message: `🦉 What is the widget id you would like to ${chalk.bold.green('GET')}?`
@@ -134,39 +142,12 @@ export const promptWidgetGetInteractive = async () => {
       setWidgetId(answer.trim());
       widgets.push(getActiveWidget());
     }
+  } else if (promptGetAction === 'bundle') {
+    const bundleAnswer = await promptSelectWidgetBundle();
+    const widgetsFromBundleAnswer = await promptSelectWidgetsFromWidgetBundle(bundleAnswer.bundleAlias, bundleAnswer.isSystem);
+    widgets = [...widgets, ...widgetsFromBundleAnswer];
   }
-  if (promptGetAction === 'bundle') {
-    const parsedToken = getParsedToken();
 
-    const widgetBundles = await getAllWidgetBundles();
-    const bundleChoices = widgetBundles.data.map(bundle => {
-      return {
-        name: bundle.title,
-        value: { bundleAlias: bundle.alias, isSystem: parsedToken.tenantId !== bundle.tenantId.id },
-        description: bundle.description
-      };
-    });
-    const promptSelectBundle = await select({
-      message: '🦉 Select a bundle',
-      loop: false,
-      choices: bundleChoices.sort((a, b) => a.name.localeCompare(b.name))
-    });
-
-    const bundleWidgets = await getAllWidgetByBundleAlias(promptSelectBundle.bundleAlias, promptSelectBundle.isSystem);
-    const widgetChoices = bundleWidgets.data.map(widget => {
-      return {
-        name: widget.name,
-        value: widget.id.id,
-        description: widget.description
-      };
-    });
-    const widgetSelection = await checkbox({
-      message: '🦉 Select widget(s)',
-      loop: false,
-      choices: widgetChoices.sort((a, b) => a.name.localeCompare(b.name))
-    }, clearPrevious);
-    widgets = [...widgets, ...widgetSelection];
-  }
   try {
     await Promise.all(
       widgets.map((widgetId) => fetchAndParseRemoteWidget(widgetId))
@@ -178,6 +159,92 @@ export const promptWidgetGetInteractive = async () => {
   goodbye();
 };
 
+export const promptSelectWidgetBundle = async (promptMessage) => {
+  const parsedToken = getParsedToken();
+  const widgetBundles = await getAllWidgetBundles();
+
+  promptMessage = promptMessage || 'Select a Widget Bundle';
+
+  const bundleChoices = widgetBundles.data.map(bundle => {
+    return {
+      name: bundle.title,
+      value: { bundleAlias: bundle.alias, isSystem: parsedToken.tenantId !== bundle.tenantId.id },
+      description: bundle.description
+    };
+  });
+
+  const bundleAnswer = await select({
+    message: `🦉 ${promptMessage}`,
+    loop: false,
+    choices: bundleChoices.sort((a, b) => a.name.localeCompare(b.name))
+  });
+  return bundleAnswer;
+};
+
+export const promptSelectWidgetsFromWidgetBundle = async (bundleAlias, isSystem) => {
+  const bundleWidgets = await getAllWidgetByBundleAlias(bundleAlias, isSystem);
+  const widgetChoices = bundleWidgets.data.map(widget => {
+    return {
+      name: widget.name,
+      value: widget.id.id,
+      description: widget.description
+    };
+  });
+
+  return await checkbox({
+    message: '🦉 Select widget(s)',
+    loop: false,
+    choices: widgetChoices.sort((a, b) => a.name.localeCompare(b.name))
+  }, clearPrevious);
+};
+
+export const promptCreateWidget = async () => {
+  const widgetBundleAnswer = await promptSelectWidgetBundle('Select a Widget Bundle');
+  const widgetNameAnswer = await input({
+    message: 'Enter the name of your new widget'
+  });
+  const typeAnswer = await select({
+    message: 'Select a widget type',
+    choices: [
+      {
+        name: 'Time Series',
+        value: { bundleAlias: 'charts', alias: 'basic_timeseries' },
+        description: 'Displays changes to timeseries data over time. For example, temperature or humidity readings.'
+
+      },
+      {
+        name: 'Latest Values',
+        value: { bundleAlias: 'cards', alias: 'attributes_card' },
+        description: 'Displays one or more latest values of the entity. Supports multiple entities.'
+
+      },
+      {
+        name: 'Control Widget',
+        value: { bundleAlias: 'gpio_widgets', alias: 'basic_gpio_control' },
+        description: "Allows to change state of the GPIO for target device using RPC commands. Requires handling of the RPC commands in the device firmware. Uses 'getGpioStatus' and 'setGpioStatus' RPC calls"
+
+      },
+      {
+        name: 'Alarm Widget',
+        value: { bundleAlias: 'alarm_widgets', alias: 'alarms_table' },
+        description: 'Displays alarms based on defined time window and other filters.'
+
+      },
+      {
+        name: 'Static Widget',
+        value: { bundleAlias: 'cards', alias: 'html_card' }
+      }
+    ]
+  });
+
+  const payload = {
+    name: widgetNameAnswer,
+    bundleAlias: widgetBundleAnswer.bundleAlias
+  };
+  const createNewWidget = await createWidget(typeAnswer.bundleAlias, true, typeAnswer.alias, payload);
+  const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.data.name}?` });
+  if (answer) fetchAndParseRemoteWidget(createNewWidget.data.id.id);
+};
 export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 

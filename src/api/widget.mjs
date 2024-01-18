@@ -8,11 +8,25 @@ export const publishWidget = async (widgetJson) => {
   return await api.post('/api/widgetType', widgetJson, jsonContentHeaders());
 };
 
+export const createWidget = async (bundleAlias, isSystem, alias, payload) => {
+  const params = {
+    bundleAlias,
+    isSystem,
+    alias
+  };
+  const baseWidget = await api.get('/api/widgetType', { params });
+  payload.descriptor = baseWidget.data.descriptor;
+  return await api.post('/api/widgetType', payload, jsonContentHeaders());
+};
 // Widget Bundles
 export const getAllWidgetBundles = async () => {
   return await api.get('/api/widgetsBundles');
 };
 
 export const getAllWidgetByBundleAlias = async (bundleAlias, isSystem) => {
-  return await api.get(`/api/widgetTypesInfos?isSystem=${isSystem}&bundleAlias=${bundleAlias}`);
+  const params = {
+    bundleAlias,
+    isSystem
+  };
+  return await api.get('/api/widgetTypesInfos', { params });
 };

@@ -3,7 +3,8 @@ import path from 'path';
 import { Command } from 'commander';
 import { cosmiconfig } from 'cosmiconfig';
 import {
-  prompForToken,
+  handlePromptError,
+  prompForToken, promptCreateWidget,
   promptMainMenu,
   promptPublishLocalWidgets,
   promptPublishModifiedWidgets,
@@ -40,43 +41,79 @@ program.parse();
 
 const options = program.opts();
 
-// if (getToken() && await !validToken()) {
-//   await refreshToken();
-// }
-
 // No option selected, lets show main menu
 if (Object.keys(options).length === 0) {
-  await showMainMenu();
+  try {
+    await showMainMenu();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 if (options.token) {
-  await prompForToken();
+  try {
+    await prompForToken();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 // Check for a token to continue
 if (!checkTokenStatus()) {
-  await prompForToken();
+  try {
+    await prompForToken();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 if (options.publishModified) {
-  await promptPublishModifiedWidgets();
+  try {
+    await promptPublishModifiedWidgets();
+  } catch (error) {
+    handlePromptError(error);
+  }
+}
+
+if (options.create) {
+  try {
+    await promptCreateWidget();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 // Get Widget from ThingsBoard
 if (options.get) {
-  await promptWidgetGetInteractive();
+  try {
+    await promptWidgetGetInteractive();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 if (options.getWidgetSources) {
-  await findLocalWidgetsSourceIds();
+  try {
+    await findLocalWidgetsSourceIds();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 // Publish Local Widget?
 if (options.push) {
-  await promptPublishLocalWidgets();
+  try {
+    await promptPublishLocalWidgets();
+  } catch (error) {
+    handlePromptError(error);
+  }
 }
 
 async function showMainMenu () {
-  const answer = await promptMainMenu();
-  options[answer] = true;
+  try {
+    const answer = await promptMainMenu();
+    options[answer] = true;
+  } catch (error) {
+    handlePromptError(error);
+  }
 }

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getToken } from '../session.mjs';
 import { logger } from '../logger.mjs';
 import { refreshExpiredToken } from './auth.mjs';
+import qs from 'qs';
 
 const log = logger.child({ prefix: 'api-core' });
 
