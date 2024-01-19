@@ -36,19 +36,14 @@ export const refreshExpiredToken = refreshExpiredTokenClosure();
 export const checkTokenStatus = async (token) => {
   token = token || getToken();
   if (!token || !tbHost()) {
-    console.debug('No Token');
+    log.debug('No Token');
     return false;
   }
   const request = await checkUserToken(token);
   logger.info('checkTokenStatus: request =>', request.status);
-  // const response = await request.json();
-  // if (request.status !== 200) {
-  //   console.log('testToken Failed =>', request.status, response.message);
-  //   // TODO: Abstract this away, no localStorage direct calls
-  //   // Attempt to refresh token
-  //   token = await refreshToken();
-  //   return token !== null;
-  // }
+  if (request.status !== 200) {
+    log.error('testToken Failed =>', request.status);
+  }
   return request.status === 200;
 };
 
@@ -83,23 +78,24 @@ export const getUserRefreshToken = async (token) => {
 
 export const refreshUserToken = async () => {
   logger.info('refreshing token...');
-
-  const response = await api.post('/api/auth/token', {
-    refreshToken: getRefreshToken()
-  });
-
-  if (response.status === 200) {
-    logger.debug('refreshUserToken success!', response, response);
-    if (response.data?.token) {
-      setUserAuthToken(response.data.token);
+  try {
+    const response = await api.post('/api/auth/token', {
+      refreshToken: getRefreshToken()
+    });
+    if (response.status === 200) {
+      logger.debug('refreshUserToken success!', response, response);
+      if (response.data?.token) {
+        setUserAuthToken(response.data.token);
+      }
+      if (response.data?.refreshToken) {
+        setUserRefreshToken(response.data.refreshToken);
+      }
+      return response;
     }
-    if (response.data?.refreshToken) {
-      setUserRefreshToken(response.data.refreshToken);
-    }
-  } else {
-    logger.error('fetchTokens failed', response);
+  } catch (error) {
+    logger.error('fetchTokens failed');
+    throw new Error(error);
   }
-  return response;
 };
 
 export const checkUserToken = async (token) => {

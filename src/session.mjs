@@ -5,6 +5,12 @@ import { logger } from './logger.mjs';
 const localStorage = new LocalStorage('./.bubo');
 const log = logger.child({ prefix: 'utils' });
 
+export const resetTokens = () => {
+  log.info('💾 Deleting Tokens!');
+  delete api.defaults.headers.common.Authorization;
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+};
 export const getToken = () => {
   log.info('💾 Getting authToken from localstorage');
   return localStorage.getItem('token');

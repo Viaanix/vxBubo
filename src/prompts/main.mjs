@@ -28,7 +28,7 @@ export const promptMainMenu = async () => {
     loop: false,
     choices: [
       {
-        name: 'Set ThingsBoard JWT token',
+        name: disableToken ? `${chalk.bold.red('Set ThingsBoard JWT token')}` : 'Set ThingsBoard JWT token',
         value: 'token',
         description: '🎟️ Copy JWT token from ThingsBoard',
         disabled: disableHost
@@ -46,7 +46,7 @@ export const promptMainMenu = async () => {
         disabled: (disableHost || disableToken)
       },
       {
-        name: 'Get Widget Sources',
+        name: 'Sync Widget Sources',
         value: 'getWidgetSources',
         description: '♻️ Download widget data for local widgets',
         disabled: (disableHost || disableToken)
@@ -71,19 +71,19 @@ export const promptMainMenu = async () => {
       },
       {
         name: 'Data Converters',
-        value: '',
+        value: 'dataconverters',
         description: '',
         disabled: true
       },
       {
         name: 'Rule Chain',
-        value: '',
+        value: 'rulechain',
         description: '',
         disabled: true
       },
       {
         name: 'Dashboard',
-        value: '',
+        value: 'dashboard',
         description: '',
         disabled: true
       },
@@ -91,7 +91,7 @@ export const promptMainMenu = async () => {
         name: 'Clear tokens and active widget id',
         value: 'clean',
         description: '🗑️ Clean local data such as host, token and widget id',
-        disable: true
+        disabled: true
       }
     ]
   }, clearPrevious);
