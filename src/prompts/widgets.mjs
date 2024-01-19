@@ -1,109 +1,12 @@
+import { getActiveWidget, setWidgetId } from '../session.mjs';
 import { checkbox, confirm, input, select } from '@inquirer/prompts';
-import clipboard from 'clipboardy';
 import chalk from 'chalk';
+import { fetchAndParseRemoteWidget, publishLocalWidget } from '../widget.mjs';
+import { getParsedToken } from '../api/auth.mjs';
+import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from '../api/widget.mjs';
+import { findLocalWidgetsWithModifiedAssets } from '../utils.mjs';
 import { formatDistanceToNow } from 'date-fns';
-import { tbHost } from '../index.mjs';
-import { findLocalWidgetsWithModifiedAssets } from './utils.mjs';
-import { getActiveWidget, setUserAuthToken, setWidgetId } from './session.mjs';
-import { fetchAndParseRemoteWidget, publishLocalWidget } from './widget.mjs';
-import { checkTokenStatus, getParsedToken, getUserRefreshToken } from './api/auth.mjs';
-import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from './api/widget.mjs';
-import { logger } from './logger.mjs';
-
-const clearPrevious = { clearPromptOnDone: true };
-
-export const goodbye = () => {
-  console.log('🦉 Goodbye!');
-  process.exit(1);
-};
-
-export const handlePromptError = (error) => {
-  if (!error.message.includes('User force closed the prompt')) {
-    logger.error(error);
-  }
-};
-
-export const promptMainMenu = async () => {
-  const disableToken = await checkTokenStatus() === false;
-  const disableHost = tbHost() === null;
-
-  const answer = await select({
-    message: '🦉 What would you like to do?',
-    choices: [
-      {
-        name: 'Set ThingsBoard JWT token',
-        value: 'token',
-        description: '🎟️ Copy JWT token from ThingsBoard',
-        disabled: disableHost
-      },
-      {
-        name: 'Create Widget',
-        value: 'create',
-        description: 'Create a new widget in a Widget bundle',
-        disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'Get Widget Interactive',
-        value: 'get',
-        description: `🕹️ ${chalk.bold.green('GET')} widget(s) using the interactive prompt`,
-        disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'Get Widget Sources',
-        value: 'getWidgetSources',
-        description: '♻️ Download widget data for local widgets',
-        disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'Publish Widgets',
-        value: 'push',
-        description: '🚀 Publish Widgets to ThingsBoard',
-        disabled: (disableHost || disableToken)
-      },
-      {
-        name: 'Publish Modified Widgets',
-        value: 'publishModified',
-        description: '🤖🚀 Publish all modified widgets',
-        disabled: (disableHost || disableToken)
-      }
-      // {
-      //   name: 'bundle',
-      //   value: 'bundle',
-      //   description: 'Bundle local widget for install'
-      // },
-      // {
-      //   name: 'Clear tokens and active widget id',
-      //   value: 'clean',
-      //   description: '🗑️ Clean local data such as host, token and widget id'
-      // }
-    ]
-  }, clearPrevious);
-  return answer;
-};
-
-export const prompForToken = async () => {
-  await confirm({
-    message: `🦉 Let's get your Thingsboard Auth Token.
-    ${chalk.reset('1) Login to ThingsBoard')}
-    ${chalk.reset(`2) Open this URL => ${tbHost()}/security `)}
-    ${chalk.reset(`3) Press the button ${chalk.bold.green('"Copy JWT token"')} ${chalk.reset('to copy the token to your clipboard')}`)}
-        
-    Finished?`
-  }, clearPrevious);
-
-  const clip = clipboard.readSync();
-  try {
-    const token = clip.startsWith('Bearer') ? clip : `Bearer ${clip}`;
-    await checkTokenStatus(token);
-    setUserAuthToken(token);
-    await getUserRefreshToken();
-  } catch (error) {
-    // const message = 'Token is not valid.';
-    console.log(error);
-    // throw new Error(message);
-  }
-  return promptMainMenu();
-};
+import { clearPrevious, goodbye } from './main.mjs';
 
 export const promptWidgetGetInteractive = async () => {
   const widgetId = await getActiveWidget() || '';
