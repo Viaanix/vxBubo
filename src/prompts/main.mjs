@@ -22,8 +22,6 @@ export const promptMainMenu = async () => {
   const disableToken = await checkTokenStatus() === false;
   const disableHost = tbHost() === null;
 
-  // console.clear();
-
   const mainMenuAnswer = await select({
     message: '🦉 What would you like to do?',
     pageSize: 12,
@@ -99,6 +97,7 @@ export const promptMainMenu = async () => {
   }, clearPrevious);
   return mainMenuAnswer;
 };
+
 export const prompForToken = async () => {
   await confirm({
     message: `🦉 Let's get your Thingsboard Auth Token.

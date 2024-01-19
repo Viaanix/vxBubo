@@ -58,6 +58,8 @@ program.parse();
 
 const options = program.opts();
 
+// TODO: FIX THIS NIGHTMARE!
+
 // No option selected, lets show main menu
 if (Object.keys(options).length === 0) {
   try {
