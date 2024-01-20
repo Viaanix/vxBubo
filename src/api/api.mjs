@@ -31,7 +31,7 @@ api.interceptors.request.use(
   async function (config) {
     log.info(`request => ${config.url}`);
     // Add Auth header unless the endpoint is login
-    if (!config.headers.Authorization && config.url !== '/core/auth/login' && getToken()) {
+    if (!config.headers.Authorization && config.url !== '/api/auth/login' && getToken()) {
       log.info('Adding Authorization Header');
       config.headers.Authorization = getToken(); // Update this request
       api.defaults.headers.common.Authorization = getToken(); // Update Globally

@@ -1,24 +1,31 @@
 import winston from 'winston';
+import { explorer } from '../index.mjs';
 
 export const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
   // defaultMeta: { service: 'user-service' },
   transports: [
-    new winston.transports.File({ filename: '.bubo/logs/info.log', level: 'info' }),
-    new winston.transports.File({ filename: '.bubo/logs/warn.log', level: 'warn' }),
-    new winston.transports.File({ filename: '.bubo/logs/debug.log', level: 'debug' }),
-    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error', lazy: true }),
-    new winston.transports.File({ filename: '.bubo/logs/combined.log' })
+    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error', lazy: true })
   ]
 });
 
-// if (process.env.NODE_ENV !== 'production') {
-//   logger.add(new winston.transports.Console({
-//     format: winston.format.simple()
-//   }));
-// }
-
+export const devLogging = () => {
+  if (explorer?.debug) {
+    logger.add(new winston.transports.File({
+      filename: '.bubo/logs/info.log',
+      level: 'info'
+    }));
+    logger.add(new winston.transports.File({
+      filename: '.bubo/logs/debug.log',
+      level: 'debug'
+    }));
+    logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
+    // logger.add(new winston.transports.Console({
+    //   format: winston.format.simple()
+    // }));
+  }
+};
 export const loggerJson = (level, message) => {
   return logger.log({
     level,
@@ -34,5 +41,5 @@ export const axiosResponseError = (level, error) => {
   body : ${error.config.body}
   message : ${error.error?.data?.message}
   `;
-  return log.log(level, message);
+  return logger.log(level, message);
 };

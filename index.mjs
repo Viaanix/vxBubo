@@ -8,9 +8,10 @@ import { promptCreateWidget, promptPublishLocalWidgets, promptPublishModifiedWid
 import { checkTokenStatus } from './src/api/auth.mjs';
 import { findLocalWidgetsSourceIds } from './src/widget.mjs';
 import { promptSetup } from './src/prompts/setup.mjs';
+import { devLogging } from './src/logger.mjs';
 
 export const rootProjectPath = process.cwd();
-let explorer;
+export let explorer = null;
 
 const loadConfig = async () => {
   const config = await cosmiconfig('bubo', {
@@ -18,6 +19,7 @@ const loadConfig = async () => {
     searchPlaces: ['bubo.config.json']
   }).search();
   explorer = config;
+  devLogging();
   return config;
 };
 
