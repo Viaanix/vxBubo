@@ -47,7 +47,7 @@ export const promptMainMenu = async () => {
       },
       {
         name: 'Sync Widget Sources',
-        value: 'getWidgetSources',
+        value: 'sync',
         description: '♻️ Download widget data for local widgets',
         disabled: (disableHost || disableToken)
       },

@@ -69,9 +69,10 @@ export const promptSelectWidgetBundle = async (promptMessage) => {
   promptMessage = promptMessage || 'Select a Widget Bundle';
 
   const bundleChoices = widgetBundles.data.map(bundle => {
+    const isSystem = parsedToken.tenantId !== bundle.tenantId.id;
     return {
-      name: bundle.title,
-      value: { bundleAlias: bundle.alias, isSystem: parsedToken.tenantId !== bundle.tenantId.id },
+      name: isSystem ? `${bundle.title} ${`${chalk.yellow('(system)')}`}` : bundle.title,
+      value: { bundleAlias: bundle.alias, isSystem },
       description: bundle.description
     };
   });
@@ -97,6 +98,7 @@ export const promptSelectWidgetsFromWidgetBundle = async (bundleAlias, isSystem)
   return await checkbox({
     message: '🦉 Select widget(s)',
     loop: false,
+    required: true,
     choices: widgetChoices.sort((a, b) => a.name.localeCompare(b.name))
   }, clearPrevious);
 };
@@ -148,6 +150,7 @@ export const promptCreateWidget = async () => {
   const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.data.name}?` });
   if (answer) fetchAndParseRemoteWidget(createNewWidget.data.id.id);
 };
+
 export const promptPublishModifiedWidgets = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
 
@@ -169,8 +172,9 @@ export const promptPublishLocalWidgets = async () => {
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
-    choices: widgetChoices,
-    loop: false
+    choices: widgetChoices.sort((a, b) => a.modifiedAgo.localeCompare(b.modifiedAgo)),
+    loop: false,
+    required: true
   }, clearPrevious);
 
   await Promise.all(
@@ -184,11 +188,14 @@ export const promptPublishLocalWidgets = async () => {
 // Helpers
 const getLocalWidgetChoices = async () => {
   const localWidgets = await findLocalWidgetsWithModifiedAssets();
+  // if (localWidgets.length === 0) {
+  // return localWidgets;
+  // }
   return localWidgets.map((widget) => {
     let modifiedAgo = '';
     if (widget?.assetsModified) {
       modifiedAgo = chalk.italic.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
     }
-    return { name: `${widget.name} ${modifiedAgo} `, value: widget };
+    return { name: `${widget.name} ${modifiedAgo} `, value: widget, modifiedAgo };
   });
 };

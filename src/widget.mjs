@@ -54,14 +54,17 @@ const resourcesWriteMap = [
 const actionWriteMap = [
   {
     property: 'customFunction',
+    types: ['custom', 'customPretty'],
     extension: 'js'
   },
   {
     property: 'customHtml',
+    types: ['customPretty'],
     extension: 'html'
   },
   {
     property: 'customCss',
+    types: ['customPretty'],
     extension: 'css'
   },
   {
@@ -190,10 +193,16 @@ const processActions = async (widgetPath, widgetJson, output) => {
       actionSources.map(async ([source, data]) => {
         await data.map(async (action) => {
           const actionPath = path.join(widgetPath, 'actions', source, action.name);
-          // Create widget action resources
           actionWriteMap.map(async (a) => {
+            // Only Process if action type matches
+            if (a?.types && !a.types.includes(action.type)) {
+              return;
+            }
+
+            // Create widget action resources
             const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
             const actionFilePath = path.join(actionPath, actionFileName);
+
             if (isWrite) {
               if (!action[a.property]) return;
               await createFile(path.join(actionPath, actionFileName), action[a.property]);
@@ -249,7 +258,10 @@ export const findLocalWidgetsSourceIds = async () => {
     cwd: localWidgetPath,
     root: ''
   });
-  // console.log('findLocalWidgetsSourceIds =>', widgetFiles);
+
+  if (!widgetFiles.length) {
+    console.log('🦉 There are no widgets to sync');
+  }
 
   return await Promise.all(
     widgetFiles.map(async (widget) => {

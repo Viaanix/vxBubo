@@ -60,34 +60,42 @@ export const discoverLocalWidgetJsons = async () => {
   const widgetJsonDir = path.join(scratchPath, 'widgets');
   const localWidgets = [];
 
-  await Promise.all(
-    fs.readdirSync(widgetJsonDir).map(async (file) => {
-      if (!file.includes('bak')) {
-        const fileExt = path.extname(file);
-        const widgetJsonPath = path.join(widgetJsonDir, file);
+  try {
+    await Promise.all(
+      fs.readdirSync(widgetJsonDir).map(async (file) => {
+        if (!file.includes('bak')) {
+          const fileExt = path.extname(file);
+          const widgetJsonPath = path.join(widgetJsonDir, file);
 
-        if (fileExt === '.json') {
-          const widgetJson = await getWidgetLocal(widgetJsonPath);
-          const widgetPath = path.join(localWidgetPath, widgetJson.bundleAlias, widgetJson.name);
-          const stats = fs.statSync(widgetJsonPath);
-          const payload = {
-            name: widgetJson.name,
-            id: file.split('.')[0],
-            jsonPath: widgetJsonPath,
-            widgetPath,
-            modified: stats.mtime
-          };
-          localWidgets.push(payload);
+          if (fileExt === '.json') {
+            const widgetJson = await getWidgetLocal(widgetJsonPath);
+            const widgetPath = path.join(localWidgetPath, widgetJson.bundleAlias, widgetJson.name);
+            const stats = fs.statSync(widgetJsonPath);
+            const payload = {
+              name: widgetJson.name,
+              id: file.split('.')[0],
+              jsonPath: widgetJsonPath,
+              widgetPath,
+              modified: stats.mtime
+            };
+            localWidgets.push(payload);
+          }
         }
-      }
-    })
-  );
+      })
+    );
+  } catch (error) {
+    // console.log('Error =>', error);
+  }
   return localWidgets;
 };
 
 export const findLocalWidgetsWithModifiedAssets = async () => {
   const localWidgets = await discoverLocalWidgetJsons();
 
+  if (localWidgets.length === 0) {
+    console.log('Nada');
+    return;
+  }
   return await Promise.all(
     localWidgets.map(async (widget) => {
       if (await checkPath(widget.widgetPath)) {

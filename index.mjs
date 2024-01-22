@@ -121,7 +121,7 @@ if (options.get) {
   }
 }
 
-if (options.getWidgetSources) {
+if (options.sync) {
   try {
     await findLocalWidgetsSourceIds();
   } catch (error) {
