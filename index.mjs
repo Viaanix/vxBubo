@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import path from 'path';
 import { Command } from 'commander';
-import { cosmiconfig } from 'cosmiconfig';
 import chalk from 'chalk';
 import { handlePromptError, prompForToken, promptMainMenu } from './src/prompts/main.mjs';
 import { promptCreateWidget, promptPublishLocalWidgets, promptPublishModifiedWidgets, promptWidgetGetInteractive } from './src/prompts/widgets.mjs';
@@ -9,23 +8,22 @@ import { checkTokenStatus } from './src/api/auth.mjs';
 import { findLocalWidgetsSourceIds } from './src/widget.mjs';
 import { promptSetup } from './src/prompts/setup.mjs';
 import { devLogging } from './src/logger.mjs';
+import { getLocalFile } from './src/utils.mjs';
 
 export const rootProjectPath = process.cwd();
-export let explorer = null;
+export let config = null;
 
 const loadConfig = async () => {
-  const config = await cosmiconfig('bubo', {
-    sync: true,
-    searchPlaces: ['bubo.config.json']
-  }).search();
-  explorer = config;
-  devLogging();
-  return config;
+  const configRaw = await getLocalFile(path.join(rootProjectPath, 'bubo.config.json'));
+  config = JSON.parse(configRaw);
+  if (configRaw.debug) {
+    devLogging();
+  }
 };
 
 await loadConfig();
 
-if (!explorer) {
+if (!config) {
   const setup = await promptSetup();
   if (setup) {
     console.log('setup =>', setup);
@@ -36,11 +34,11 @@ if (!explorer) {
   }
 }
 
-export const localWidgetPath = path.join(rootProjectPath, explorer.config.widgetWorkingDirectory);
+export const localWidgetPath = path.join(rootProjectPath, config.widgetWorkingDirectory);
 export const scratchPath = path.join(rootProjectPath, '.bubo');
 
 export const tbHost = () => {
-  return explorer.config.thingsBoardHost.trim().replace(/\/+$/g, '');
+  return config.thingsBoardHost.trim().replace(/\/+$/g, '');
 };
 
 // console.clear();

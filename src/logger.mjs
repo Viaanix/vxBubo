@@ -1,5 +1,4 @@
 import winston from 'winston';
-import { explorer } from '../index.mjs';
 
 export const logger = winston.createLogger({
   level: 'info',
@@ -11,27 +10,25 @@ export const logger = winston.createLogger({
 });
 
 export const devLogging = () => {
-  if (explorer?.debug) {
-    logger.add(new winston.transports.File({
-      filename: '.bubo/logs/info.log',
-      level: 'info'
-    }));
-    logger.add(new winston.transports.File({
-      filename: '.bubo/logs/debug.log',
-      level: 'debug'
-    }));
-    logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
-    // logger.add(new winston.transports.Console({
-    //   format: winston.format.simple()
-    // }));
-  }
+  logger.add(new winston.transports.File({
+    filename: '.bubo/logs/info.log',
+    level: 'info'
+  }));
+  logger.add(new winston.transports.File({
+    filename: '.bubo/logs/debug.log',
+    level: 'debug'
+  }));
+  logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
+  // logger.add(new winston.transports.Console({
+  //   format: winston.format.simple()
+  // }));
 };
-export const loggerJson = (level, message) => {
-  return logger.log({
-    level,
-    message: JSON.stringify(message)
-  });
-};
+// export const loggerJson = (level, message) => {
+//   return logger.log({
+//     level,
+//     message: JSON.stringify(message)
+//   });
+// };
 
 export const axiosResponseError = (level, error) => {
   const message = `❌ - Axios Response ${error.status} 

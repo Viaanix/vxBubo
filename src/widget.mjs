@@ -75,12 +75,12 @@ const actionWriteMap = [
 ];
 
 export const fetchAndParseRemoteWidget = async (widgetId) => {
-  await fetchAndSaveRemoteWidget(widgetId);
+  await fetchAndSaveRemoteWidgetLocal(widgetId);
   await parseWidgetExport(widgetId);
 };
 
 // Actions
-export const fetchAndSaveRemoteWidget = async (widgetId) => {
+export const fetchAndSaveRemoteWidgetLocal = async (widgetId) => {
   try {
     const response = await getWidgetByID(widgetId);
     await validatePath(path.join(scratchPath, 'widgets'));
@@ -135,6 +135,12 @@ export const parseWidgetExport = async (widgetId) => {
 
 export const publishLocalWidget = async (widgetId) => {
   guardRequireWidgetId(widgetId);
+  const bundleOutput = await bundleLocalWidget(widgetId);
+  return await deployWidgetJson(bundleOutput);
+};
+
+export const bundleLocalWidget = async (widgetId) => {
+  guardRequireWidgetId(widgetId);
 
   const widgetSourcePath = widgetJsonPath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
@@ -155,26 +161,34 @@ export const publishLocalWidget = async (widgetId) => {
 
   // Process widget actions
   localWidgetJson.descriptor.defaultConfig = JSON.stringify(await processActions(widgetPath, localWidgetJson, outputAction));
-  const widgetJson = formatJson(localWidgetJson);
-  // return await createFile(path.join(widgetPath, 'test.json'), widgetJson);
 
+  const widgetJson = formatJson(localWidgetJson);
+
+  // If the widget name  was modified, update the directory name
+  if (widgetJsonSource.name !== localWidgetJson.name) {
+    await fs.renameSync(widgetPath, path.join(localWidgetPath, widgetJsonSource.bundleAlias, localWidgetJson.name));
+  }
+
+  await Promise.all([
+    backupLocalWidgetBundle(widgetId, widgetJson),
+    createFile(widgetJsonPath(widgetId), widgetJson)
+  ]);
+
+  return widgetJson;
+};
+
+export const backupLocalWidgetBundle = async (widgetId, widgetJson) => {
+  return fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
+};
+
+export const deployWidgetJson = async (widgetJson) => {
   const request = await publishWidget(widgetJson);
   if (request.status === 200) {
-    // Backup current widget
-    fs.copyFileSync(widgetJsonPath(widgetId), path.join(scratchPath, 'widgets', `${widgetId}.json.bak`));
-
-    // Update Local Widget Export
-    await createFile(widgetJsonPath(widgetId), widgetJson);
-
-    // If the widget name  was modified, update the directory name
-    if (widgetJsonSource.name !== localWidgetJson.name) {
-      await fs.renameSync(widgetPath, path.join(localWidgetPath, widgetJsonSource.bundleAlias, localWidgetJson.name));
-    }
-
-    console.log(chalk.green(`🦉 Widget ${localWidgetJson.name} has successfully been published`));
+    console.log(chalk.green(`🦉 Widget ${widgetJson.name} has successfully been published`));
   } else {
-    console.log(chalk.red(`🦉 Unable to publish ${localWidgetJson.name}, ${request.data.message}`));
+    console.log(chalk.red(`🦉 Unable to publish ${widgetJson.name}, ${request.data.message}`));
   }
+  return request;
 };
 
 const processActions = async (widgetPath, widgetJson, output) => {
@@ -268,7 +282,7 @@ export const findLocalWidgetsSourceIds = async () => {
       const localWidgetJsonPath = path.join(localWidgetPath, widget);
       const localWidget = await getLocalFile(localWidgetJsonPath);
       const localWidgetJson = JSON.parse(localWidget);
-      return await fetchAndSaveRemoteWidget(localWidgetJson.protected.id.id);
+      return await fetchAndSaveRemoteWidgetLocal(localWidgetJson.protected.id.id);
     })
   );
 };

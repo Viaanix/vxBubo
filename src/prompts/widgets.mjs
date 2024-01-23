@@ -1,5 +1,5 @@
 import { getActiveWidget, setWidgetId } from '../session.mjs';
-import { checkbox, confirm, input, select } from '@inquirer/prompts';
+import { checkbox, confirm, input, select, Separator } from '@inquirer/prompts';
 import chalk from 'chalk';
 import { fetchAndParseRemoteWidget, publishLocalWidget } from '../widget.mjs';
 import { getParsedToken } from '../api/auth.mjs';
@@ -168,11 +168,18 @@ export const promptPublishModifiedWidgets = async () => {
 };
 
 export const promptPublishLocalWidgets = async () => {
-  const widgetChoices = await getLocalWidgetChoices();
-
+  const localWidgets = await getLocalWidgetChoices();
+  const widgetGrouping = Object.groupBy(localWidgets, widget => {
+    return widget.modifiedAgo !== '' ? 'modified' : 'clean';
+  });
+  const widgetChoices = [
+    ...widgetGrouping.modified.sort((a, b) => a.modifiedAgo.localeCompare(b.modifiedAgo)),
+    new Separator(),
+    ...widgetGrouping.clean.sort((a, b) => a.name.localeCompare(b.name))
+  ];
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
-    choices: widgetChoices.sort((a, b) => a.modifiedAgo.localeCompare(b.modifiedAgo)),
+    choices: widgetChoices,
     loop: false,
     required: true
   }, clearPrevious);
