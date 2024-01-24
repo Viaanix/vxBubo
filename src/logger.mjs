@@ -5,20 +5,23 @@ export const logger = winston.createLogger({
   format: winston.format.json(),
   // defaultMeta: { service: 'user-service' },
   transports: [
-    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error', lazy: true })
+    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: '.bubo/logs/info.log', level: 'info' }),
+    new winston.transports.File({ filename: '.bubo/logs/debug.log', level: 'debug' }),
+    new winston.transports.File({ filename: '.bubo/logs/combined.log' })
   ]
 });
 
 export const devLogging = () => {
-  logger.add(new winston.transports.File({
-    filename: '.bubo/logs/info.log',
-    level: 'info'
-  }));
-  logger.add(new winston.transports.File({
-    filename: '.bubo/logs/debug.log',
-    level: 'debug'
-  }));
-  logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
+  // logger.add(new winston.transports.File({
+  //   filename: '.bubo/logs/info.log',
+  //   level: 'info'
+  // }));
+  // logger.add(new winston.transports.File({
+  //   filename: '.bubo/logs/debug.log',
+  //   level: 'debug'
+  // }));
+  // logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
   // logger.add(new winston.transports.Console({
   //   format: winston.format.simple()
   // }));

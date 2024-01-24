@@ -143,3 +143,13 @@ export function mergeDeep (...objects) {
   });
   return target;
 }
+
+export const getBundleAliasFromWidgetJson = (widgetJson) => {
+  if (widgetJson?.bundleAlias) {
+    return widgetJson.bundleAlias;
+  } else {
+    const fqnChunk = widgetJson.fqn.split('.');
+    log.info(`widgetJSON fqn: ${widgetJson.fqn} bundleAlias: ${fqnChunk[0]} alias: ${fqnChunk[1]}`);
+    return fqnChunk[0];
+  }
+};

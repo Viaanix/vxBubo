@@ -1,7 +1,16 @@
 import path from 'path';
 import fs from 'node:fs';
 import { glob } from 'glob';
-import { checkPath, createFile, formatJson, getLocalFile, getWidgetLocal, mergeDeep, validatePath } from './utils.mjs';
+import {
+  checkPath,
+  createFile,
+  formatJson,
+  getBundleAliasFromWidgetJson,
+  getLocalFile,
+  getWidgetLocal,
+  mergeDeep,
+  validatePath
+} from './utils.mjs';
 import { localWidgetPath, scratchPath } from '../index.mjs';
 import chalk from 'chalk';
 import { getWidgetByID, publishWidget } from './api/widget.mjs';
@@ -100,8 +109,10 @@ const prepareLocalWidgetJson = async (widgetJson) => {
   widgetJson.protected = {};
   const widgetProtectedKeys = ['id', 'createdTime', 'tenantId', 'bundleAlias'];
   widgetProtectedKeys.forEach((key) => {
-    widgetJson.protected[key] = widgetJson[key];
-    delete widgetJson[key];
+    if (widgetJson.protected[key]) {
+      widgetJson.protected[key] = widgetJson[key];
+      delete widgetJson[key];
+    }
   });
 
   widgetJson.protected.descriptor = {
@@ -118,8 +129,8 @@ export const parseWidgetExport = async (widgetId) => {
 
   const widgetSourcePath = widgetJsonPath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
-
-  const widgetPath = path.join(localWidgetPath, widgetJsonSource.bundleAlias, widgetJsonSource.name);
+  const bundleAlias = getBundleAliasFromWidgetJson(widgetJsonSource);
+  const widgetPath = path.join(localWidgetPath, bundleAlias, widgetJsonSource.name);
 
   // Create local widget resources
   const outputAction = 'write';
@@ -144,7 +155,8 @@ export const bundleLocalWidget = async (widgetId) => {
 
   const widgetSourcePath = widgetJsonPath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
-  const widgetPath = path.join(localWidgetPath, widgetJsonSource.bundleAlias, widgetJsonSource.name);
+  const bundleAlias = getBundleAliasFromWidgetJson(widgetJsonSource);
+  const widgetPath = path.join(localWidgetPath, bundleAlias, widgetJsonSource.name);
 
   // Get localWidgetJson
   let localWidgetJson = await getWidgetLocal(path.join(widgetPath, 'widget.json'));
@@ -166,7 +178,7 @@ export const bundleLocalWidget = async (widgetId) => {
 
   // If the widget name  was modified, update the directory name
   if (widgetJsonSource.name !== localWidgetJson.name) {
-    await fs.renameSync(widgetPath, path.join(localWidgetPath, widgetJsonSource.bundleAlias, localWidgetJson.name));
+    await fs.renameSync(widgetPath, path.join(localWidgetPath, bundleAlias, localWidgetJson.name));
   }
 
   await Promise.all([
@@ -247,7 +259,9 @@ const processWidgetResources = async (widgetPath, widgetJson, output) => {
 
   await Promise.all(
     resourcesWriteMap.map(async (resource) => {
-      const resFileName = resource.name ? `${resource.name}.${resource.extension}` : `${widgetJson.alias}.${resource.extension}`;
+      const widgetAlias = widgetJson.alias || widgetJson.fqn;
+      if (!widgetAlias) log.error('Cannot find alias');
+      const resFileName = resource.name ? `${resource.name}.${resource.extension}` : `${widgetAlias}.${resource.extension}`;
       const resourcePath = path.join(widgetPath, resFileName);
 
       // Write
