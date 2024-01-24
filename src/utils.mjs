@@ -154,3 +154,12 @@ export const getBundleAliasFromWidgetJson = (widgetJson) => {
     return fqnChunk[0];
   }
 };
+
+export const getAliasFromWidgetJson = (widgetJson) => {
+  if (widgetJson?.alias) {
+    return widgetJson.alias;
+  } else {
+    const fqnChunk = widgetJson.fqn.split('.');
+    return fqnChunk[1] || fqnChunk[0];
+  }
+};

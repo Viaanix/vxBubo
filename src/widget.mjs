@@ -5,6 +5,7 @@ import {
   checkPath,
   createFile,
   formatJson,
+  getAliasFromWidgetJson,
   getBundleAliasFromWidgetJson,
   getLocalFile,
   getWidgetLocal,
@@ -260,7 +261,7 @@ const processWidgetResources = async (widgetPath, widgetJson, output) => {
 
   await Promise.all(
     resourcesWriteMap.map(async (resource) => {
-      const widgetAlias = widgetJson.alias || widgetJson.fqn;
+      const widgetAlias = getAliasFromWidgetJson(widgetJson);
       if (!widgetAlias) log.error('Cannot find alias');
       const resFileName = resource.name ? `${resource.name}.${resource.extension}` : `${widgetAlias}.${resource.extension}`;
       const resourcePath = path.join(widgetPath, resFileName);
