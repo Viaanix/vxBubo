@@ -69,7 +69,8 @@ export const discoverLocalWidgetJsons = async () => {
 
           if (fileExt === '.json') {
             const widgetJson = await getWidgetLocal(widgetJsonPath);
-            const widgetPath = path.join(localWidgetPath, widgetJson.bundleAlias, widgetJson.name);
+            const bundleAlias = getBundleAliasFromWidgetJson(widgetJson);
+            const widgetPath = path.join(localWidgetPath, bundleAlias, widgetJson.name);
             const stats = fs.statSync(widgetJsonPath);
             const payload = {
               name: widgetJson.name,

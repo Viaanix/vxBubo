@@ -186,7 +186,7 @@ export const bundleLocalWidget = async (widgetId) => {
     createFile(widgetJsonPath(widgetId), widgetJson)
   ]);
 
-  return widgetJson;
+  return localWidgetJson;
 };
 
 export const backupLocalWidgetBundle = async (widgetId, widgetJson) => {
@@ -194,7 +194,8 @@ export const backupLocalWidgetBundle = async (widgetId, widgetJson) => {
 };
 
 export const deployWidgetJson = async (widgetJson) => {
-  const request = await publishWidget(widgetJson);
+  const widgetJsonFormatted = formatJson(widgetJson);
+  const request = await publishWidget(widgetJsonFormatted);
   if (request.status === 200) {
     console.log(chalk.green(`🦉 Widget ${widgetJson.name} has successfully been published`));
   } else {
