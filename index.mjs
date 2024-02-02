@@ -137,10 +137,11 @@ if (options.push) {
 }
 
 async function showMainMenu () {
-  try {
-    const answer = await promptMainMenu();
-    options[answer] = true;
-  } catch (error) {
-    handlePromptError(error);
-  }
+  // try {
+  const answer = await promptMainMenu();
+  options[answer] = true;
+  return answer;
+  // } catch (error) {
+  //   handlePromptError(error);
+  // }
 }

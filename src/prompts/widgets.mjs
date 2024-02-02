@@ -169,14 +169,18 @@ export const promptPublishModifiedWidgets = async () => {
 
 export const promptPublishLocalWidgets = async () => {
   const localWidgets = await getLocalWidgetChoices();
+
+  // Group Widgets by modified and unmodified
   const widgetGrouping = Object.groupBy(localWidgets, widget => {
     return widget.modifiedAgo !== '' ? 'modified' : 'clean';
   });
+
   const widgetChoices = [
-    ...widgetGrouping.modified.sort((a, b) => a.modifiedAgo.localeCompare(b.modifiedAgo)),
+    ...widgetGrouping.modified.sort((a, b) => a.modifiedAgo - b.modifiedAgo),
     new Separator(),
     ...widgetGrouping.clean.sort((a, b) => a.name.localeCompare(b.name))
   ];
+
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
     choices: widgetChoices,
