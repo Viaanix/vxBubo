@@ -1,37 +1,40 @@
 import winston from 'winston';
-import { explorer } from '../index.mjs';
+// import { colorize } from './utils.mjs';
 
 export const logger = winston.createLogger({
-  level: 'info',
+  // level: 'info',
   format: winston.format.json(),
   // defaultMeta: { service: 'user-service' },
   transports: [
-    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error', lazy: true })
+    new winston.transports.File({ filename: '.bubo/logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: '.bubo/logs/info.log', level: 'info' }),
+    new winston.transports.File({ filename: '.bubo/logs/debug.log', level: 'debug' }),
+    new winston.transports.File({ filename: '.bubo/logs/combined.log' })
   ]
 });
 
 export const devLogging = () => {
-  if (explorer?.debug) {
-    logger.add(new winston.transports.File({
-      filename: '.bubo/logs/info.log',
-      level: 'info'
-    }));
-    logger.add(new winston.transports.File({
-      filename: '.bubo/logs/debug.log',
-      level: 'debug'
-    }));
-    logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
-    // logger.add(new winston.transports.Console({
-    //   format: winston.format.simple()
-    // }));
-  }
+  console.log('devLogging');
+  // console.log(colorize('info', 'devLogging'));
+  // logger.add(new winston.transports.File({
+  //   filename: '.bubo/logs/info.log',
+  //   level: 'info'
+  // }));
+  // logger.add(new winston.transports.File({
+  //   filename: '.bubo/logs/debug.log',
+  //   level: 'debug'
+  // }));
+  // logger.add(new winston.transports.File({ filename: '.bubo/logs/combined.log' }));
+  // logger.add(new winston.transports.Console({
+  //   format: winston.format.simple()
+  // }));
 };
-export const loggerJson = (level, message) => {
-  return logger.log({
-    level,
-    message: JSON.stringify(message)
-  });
-};
+// export const loggerJson = (level, message) => {
+//   return logger.log({
+//     level,
+//     message: JSON.stringify(message)
+//   });
+// };
 
 export const axiosResponseError = (level, error) => {
   const message = `❌ - Axios Response ${error.status} 

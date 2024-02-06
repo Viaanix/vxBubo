@@ -40,9 +40,9 @@ export const checkTokenStatus = async (token) => {
     return false;
   }
   const request = await checkUserToken(token);
-  logger.info('checkTokenStatus: request =>', request.status);
+  log.info(`checkTokenStatus: request => ${request.status}`);
   if (request.status !== 200) {
-    log.error('testToken Failed =>', request.status);
+    log.error(`testToken Failed => ${request.status}`);
   }
   return request.status === 200;
 };
@@ -51,10 +51,10 @@ export const testAndRefreshToken = async (token) => {
   token = token || getToken();
   const tokenTest = await checkTokenStatus(token);
   if (!tokenTest) {
-    logger.info('testAndRefreshToken test failed.');
+    log.info('testAndRefreshToken test failed.');
     return await refreshExpiredToken();
   }
-  logger.info('testAndRefreshToken test passed.');
+  log.info('testAndRefreshToken test passed.');
   return true;
 };
 
@@ -62,11 +62,11 @@ export const testAndRefreshToken = async (token) => {
 export const getUserRefreshToken = async (token) => {
   const parsedToken = getParsedToken(token);
   const userId = parsedToken?.userId;
-  logger.debug(`parsedToke => ${parsedToken}`);
+  log.debug(`parsedToke => ${parsedToken}`);
   if (userId) {
     const tokenRequest = await api.get(`/api/user/${userId}/token`, authHeaders(token));
     const tokenResponse = tokenRequest.data;
-    logger.debug(`getUserRefreshToken => ${tokenRequest}`);
+    log.debug(`getUserRefreshToken => ${tokenRequest}`);
     if (tokenResponse?.refreshToken) {
       setUserRefreshToken(tokenResponse.refreshToken);
       return getRefreshToken();
@@ -77,13 +77,14 @@ export const getUserRefreshToken = async (token) => {
 };
 
 export const refreshUserToken = async () => {
-  logger.info('refreshing token...');
+  log.info('refreshing token...');
   try {
     const response = await api.post('/api/auth/token', {
       refreshToken: getRefreshToken()
     });
     if (response.status === 200) {
-      logger.debug('refreshUserToken success!', response, response);
+      log.debug('refreshUserToken success!', response, response);
+      // log.debug('refreshUserToken success!', response, response);
       if (response.data?.token) {
         setUserAuthToken(response.data.token);
       }
@@ -93,7 +94,7 @@ export const refreshUserToken = async () => {
       return response;
     }
   } catch (error) {
-    logger.error('fetchTokens failed');
+    log.error('fetchTokens failed');
     throw new Error(error);
   }
 };

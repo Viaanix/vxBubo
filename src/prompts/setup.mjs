@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { confirm, input } from '@inquirer/prompts';
-import { clearPrevious } from './main.mjs';
+import { clearPrevious } from './helpers.mjs';
 import { checkPath, createFile, getLocalFile, validatePath } from '../utils.mjs';
 import { rootProjectPath } from '../../index.mjs';
 import { logger } from './../logger.mjs';
@@ -41,7 +41,7 @@ export const promptSetup = async () => {
           try {
             await fs.appendFileSync(gitIgnorePath, '.bubo');
           } catch (error) {
-            log.error(error);
+            log.error('promptSetup =>', error);
             throw new Error(error);
           }
         }
