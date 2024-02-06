@@ -12,7 +12,7 @@ export const handlePromptError = (error) => {
     logger.error('handlePromptError', error);
     console.log('ERROR =>', error);
   } else {
-    console.log('SEEE YAAA!', error);
+    // console.log('SEEE YAAA!', error);
   }
 };
 

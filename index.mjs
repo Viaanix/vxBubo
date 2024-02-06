@@ -9,7 +9,8 @@ import { findLocalWidgetsSourceIds } from './src/widgets/base.mjs';
 import { promptSetup } from './src/prompts/setup.mjs';
 import { devLogging } from './src/logger.mjs';
 import { getLocalFile } from './src/utils.mjs';
-import { discoverLocalWidgets } from './src/widgets/helper.mjs';
+import { api } from './src/api/api.mjs';
+// import { discoverLocalWidgets } from './src/widgets/helper.mjs';
 
 export const rootProjectPath = process.cwd();
 export let config = null;
@@ -17,6 +18,8 @@ export let config = null;
 const loadConfig = async () => {
   const configRaw = await getLocalFile(path.join(rootProjectPath, 'bubo.config.json'));
   config = JSON.parse(configRaw);
+  api.defaults.baseURL = config.thingsBoardHost;
+
   if (configRaw.debug) {
     devLogging();
   }
@@ -63,7 +66,7 @@ const options = program.opts();
 // No option selected, lets show main menu
 export async function main (answer = null) {
   if (answer) { options[answer] = true; }
-  // console.log(`MainFunction => answer: ${answer}`, options, Object.keys(options).length);
+  console.log(`MainFunction => answer: ${answer}`, options, Object.keys(options).length);
 
   // Check for a token to continue
   if (!await checkTokenStatus()) {
@@ -84,7 +87,7 @@ export async function main (answer = null) {
 
   if (options.setup) {
     try {
-      // delete options.setup;
+      delete options.setup;
       await promptSetup();
     } catch (error) {
       handlePromptError(error);
@@ -93,7 +96,7 @@ export async function main (answer = null) {
 
   if (options.token) {
     try {
-      // delete options.token;
+      delete options.token;
       await prompForToken();
     } catch (error) {
       handlePromptError(error);
@@ -102,7 +105,7 @@ export async function main (answer = null) {
 
   if (options.publishModified) {
     try {
-      // delete options.publishModified;
+      delete options.publishModified;
       await promptPublishModifiedWidgets();
     } catch (error) {
       handlePromptError(error);
@@ -111,6 +114,7 @@ export async function main (answer = null) {
 
   if (options.create) {
     try {
+      delete options.create;
       await promptCreateWidget();
     } catch (error) {
       handlePromptError(error);
@@ -120,6 +124,7 @@ export async function main (answer = null) {
   // Get Widget from ThingsBoard
   if (options.get) {
     try {
+      delete options.get;
       await promptWidgetGetInteractive();
     } catch (error) {
       handlePromptError(error);
@@ -128,6 +133,7 @@ export async function main (answer = null) {
 
   if (options.sync) {
     try {
+      delete options.sync;
       await findLocalWidgetsSourceIds();
     } catch (error) {
       handlePromptError(error);
@@ -137,6 +143,7 @@ export async function main (answer = null) {
   // Publish Local Widget?
   if (options.push) {
     try {
+      delete options.push;
       await promptPublishLocalWidgets();
     } catch (error) {
       handlePromptError(error);

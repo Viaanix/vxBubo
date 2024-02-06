@@ -23,7 +23,6 @@ export const jsonContentHeaders = () => {
 };
 
 export const api = axios.create({
-  baseURL: 'https://portal.vxolympus.com',
   responseType: 'json'
 });
 
