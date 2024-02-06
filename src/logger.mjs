@@ -1,7 +1,8 @@
 import winston from 'winston';
+// import { colorize } from './utils.mjs';
 
 export const logger = winston.createLogger({
-  level: 'info',
+  // level: 'info',
   format: winston.format.json(),
   // defaultMeta: { service: 'user-service' },
   transports: [
@@ -13,6 +14,8 @@ export const logger = winston.createLogger({
 });
 
 export const devLogging = () => {
+  console.log('devLogging');
+  // console.log(colorize('info', 'devLogging'));
   // logger.add(new winston.transports.File({
   //   filename: '.bubo/logs/info.log',
   //   level: 'info'

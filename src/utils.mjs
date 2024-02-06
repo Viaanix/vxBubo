@@ -1,12 +1,25 @@
 import path from 'path';
 import fs from 'fs';
-import { scratchPath, localWidgetPath } from '../index.mjs';
+// import { scratchPath, localWidgetPath } from '../index.mjs';
 import { logger } from './logger.mjs';
+import chalk from 'chalk';
+// import { getWidgetTenant } from './api/widget.mjs';
 
 const log = logger.child({ prefix: 'utils' });
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
+};
+
+export const colorize = (style, message) => {
+  const styles = {
+    error: chalk.bold.red,
+    warning: chalk.bold.yellow, // Orange color
+    success: chalk.bold.green,
+    info: chalk.bold.blue
+  };
+
+  return styles[style](message);
 };
 
 // =============================
@@ -35,7 +48,7 @@ export const createFile = async (filePath, data) => {
   try {
     fs.writeFileSync(filePath, data);
   } catch (error) {
-    log.error(error);
+    log.error('createFile => ', error);
     throw new Error(error);
   }
 };
@@ -45,73 +58,10 @@ export const getLocalFile = async (filePath) => {
   try {
     fileRaw = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
-    log.error(error);
+    log.error('getLocalFile =>', error);
     throw new Error(error);
   }
   return fileRaw;
-};
-
-export const getWidgetLocal = async (widgetPath) => {
-  const widgetJsonRaw = await getLocalFile(widgetPath);
-  return JSON.parse(widgetJsonRaw);
-};
-
-export const discoverLocalWidgetJsons = async () => {
-  const widgetJsonDir = path.join(scratchPath, 'widgets');
-  const localWidgets = [];
-
-  try {
-    await Promise.all(
-      fs.readdirSync(widgetJsonDir).map(async (file) => {
-        if (!file.includes('bak')) {
-          const fileExt = path.extname(file);
-          const widgetJsonPath = path.join(widgetJsonDir, file);
-
-          if (fileExt === '.json') {
-            const widgetJson = await getWidgetLocal(widgetJsonPath);
-            const bundleAlias = getBundleAliasFromWidgetJson(widgetJson);
-            const widgetPath = path.join(localWidgetPath, bundleAlias, widgetJson.name);
-            const stats = fs.statSync(widgetJsonPath);
-            const payload = {
-              name: widgetJson.name,
-              id: file.split('.')[0],
-              jsonPath: widgetJsonPath,
-              widgetPath,
-              modified: stats.mtime
-            };
-            localWidgets.push(payload);
-          }
-        }
-      })
-    );
-  } catch (error) {
-    // console.log('Error =>', error);
-  }
-  return localWidgets;
-};
-
-export const findLocalWidgetsWithModifiedAssets = async () => {
-  const localWidgets = await discoverLocalWidgetJsons();
-
-  if (localWidgets.length === 0) {
-    console.log('Nada');
-    return;
-  }
-  return await Promise.all(
-    localWidgets.map(async (widget) => {
-      if (await checkPath(widget.widgetPath)) {
-        const widgetFiles = await fs.readdirSync(widget.widgetPath, { recursive: true });
-        for (const widgetAsset of widgetFiles) {
-          const widgetAssetPath = path.join(widget.widgetPath, widgetAsset);
-          const stats = fs.statSync(widgetAssetPath);
-          if (stats.mtime > widget.modified) {
-            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
-          }
-        }
-      }
-      return widget;
-    })
-  );
 };
 
 /**
@@ -144,22 +94,3 @@ export function mergeDeep (...objects) {
   });
   return target;
 }
-
-export const getBundleAliasFromWidgetJson = (widgetJson) => {
-  if (widgetJson?.bundleAlias) {
-    return widgetJson.bundleAlias;
-  } else {
-    const fqnChunk = widgetJson.fqn.split('.');
-    log.info(`widgetJSON fqn: ${widgetJson.fqn} bundleAlias: ${fqnChunk[0]} alias: ${fqnChunk[1]}`);
-    return fqnChunk[0];
-  }
-};
-
-export const getAliasFromWidgetJson = (widgetJson) => {
-  if (widgetJson?.alias) {
-    return widgetJson.alias;
-  } else {
-    const fqnChunk = widgetJson.fqn.split('.');
-    return fqnChunk[1] || fqnChunk[0];
-  }
-};

@@ -1,20 +1,18 @@
 import { logger } from '../logger.mjs';
 import { checkTokenStatus, getUserRefreshToken } from '../api/auth.mjs';
-import { tbHost } from '../../index.mjs';
+import { tbHost, main } from '../../index.mjs';
 import { confirm, select } from '@inquirer/prompts';
 import chalk from 'chalk';
 import clipboard from 'clipboardy';
 import { setUserAuthToken } from '../session.mjs';
-
-export const clearPrevious = { clearPromptOnDone: true };
-export const goodbye = () => {
-  console.log('🦉 Goodbye!');
-  process.exit(1);
-};
+import { clearPrevious } from './helpers.mjs';
 
 export const handlePromptError = (error) => {
   if (!error.message.includes('User force closed the prompt')) {
-    logger.error(error);
+    logger.error('handlePromptError', error);
+    console.log('ERROR =>', error);
+  } else {
+    console.log('SEEE YAAA!', error);
   }
 };
 
@@ -24,7 +22,7 @@ export const promptMainMenu = async () => {
 
   const mainMenuAnswer = await select({
     message: '🦉 What would you like to do?',
-    pageSize: 12,
+    // pageSize: 12,
     loop: false,
     choices: [
       {
@@ -61,7 +59,7 @@ export const promptMainMenu = async () => {
         name: 'Publish ALL Modified Widgets',
         value: 'publishModified',
         description: '🤖 Publish all modified widgets',
-        disabled: (disableHost || disableToken)
+        disabled: true
       },
       {
         name: 'Bundle Local Widget',
@@ -95,7 +93,8 @@ export const promptMainMenu = async () => {
       }
     ]
   }, clearPrevious);
-  return mainMenuAnswer;
+
+  return await main(mainMenuAnswer);
 };
 
 export const prompForToken = async () => {
@@ -116,8 +115,10 @@ export const prompForToken = async () => {
     await getUserRefreshToken();
   } catch (error) {
     // const message = 'Token is not valid.';
-    console.log(error);
+    logger.error('prompForToken Error', error);
+    // logger.error(error);
+    console.log('prompForToken Error =>', error);
     // throw new Error(message);
   }
-  return promptMainMenu();
+  return await main();
 };
