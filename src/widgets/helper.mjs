@@ -1,11 +1,12 @@
 import fs from 'fs';
-import { localWidgetPath, scratchPath } from '../../index.mjs';
 import path from 'path';
-import { checkPath, getLocalFile } from '../utils.mjs';
 import { glob } from 'glob';
+import { compareDesc } from 'date-fns';
+import { localWidgetPath, scratchPath } from '../../index.mjs';
+import { checkPath, getLocalFile } from '../utils.mjs';
 import { getWidgetTenant } from './api.mjs';
-
 import { logger } from '../logger.mjs';
+
 const log = logger.child({ prefix: 'widget-helper' });
 
 export const guardRequireWidgetId = (widgetId) => {
@@ -91,8 +92,7 @@ export const discoverLocalWidgets = async () => {
     root: ''
   });
 
-  // console.log(`widgetFiles => ${widgetFiles}`);
-  return Promise.all(
+  let localWidgets = await Promise.all(
     widgetFiles.map(async (widget) => {
       const widgetJsonPath = path.join(localWidgetPath, widget);
       const widgetJson = await getWidgetLocal(widgetJsonPath);
@@ -110,6 +110,9 @@ export const discoverLocalWidgets = async () => {
       };
     })
   );
+  // Remove ignored widgets. TODO: Improve this so it clear to the user these were ignored.
+  localWidgets = localWidgets.filter((widget) => widget?.assetsModified && widget?.assetsModified !== 'ignore');
+  return localWidgets.sort((a, b) => compareDesc(a.assetsModified, b.assetsModified));
 };
 
 export const findModifiedAgo = async (widgetPath) => {
@@ -117,38 +120,40 @@ export const findModifiedAgo = async (widgetPath) => {
     let recentlyModified;
     const widgetFiles = await fs.readdirSync(widgetPath, { recursive: true });
     for (const widgetAsset of widgetFiles) {
+      if (widgetAsset === '.ignore') return 'ignore';
       const widgetAssetPath = path.join(widgetPath, widgetAsset);
       const stats = fs.statSync(widgetAssetPath);
       // console.log(widgetAsset, stats.mtime);
       if (stats.mtime > recentlyModified || !recentlyModified) {
         recentlyModified = stats.mtime;
       }
-      return recentlyModified;
     }
+    return recentlyModified;
   }
 };
 
-export const findLocalWidgetsWithModifiedAssets = async () => {
-  // const localWidgets = await discoverLocalWidgetJsons();
-  const localWidgets = await discoverLocalWidgets();
-
-  if (localWidgets.length === 0) {
-    console.log('Nada');
-    return;
-  }
-  return await Promise.all(
-    localWidgets.map(async (widget) => {
-      if (await checkPath(widget.widgetPath)) {
-        const widgetFiles = await fs.readdirSync(widget.widgetPath, { recursive: true });
-        for (const widgetAsset of widgetFiles) {
-          const widgetAssetPath = path.join(widget.widgetPath, widgetAsset);
-          const stats = fs.statSync(widgetAssetPath);
-          if (stats.mtime > widget.modified) {
-            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
-          }
-        }
-      }
-      return widget;
-    })
-  );
-};
+// TODO: DONE NEED DIS
+// export const findLocalWidgetsWithModifiedAssets = async () => {
+//   // const localWidgets = await discoverLocalWidgetJsons();
+//   const localWidgets = await discoverLocalWidgets();
+//
+//   if (localWidgets.length === 0) {
+//     console.log('Nada');
+//     return;
+//   }
+//   return await Promise.all(
+//     localWidgets.map(async (widget) => {
+//       if (await checkPath(widget.widgetPath)) {
+//         const widgetFiles = await fs.readdirSync(widget.widgetPath, { recursive: true });
+//         for (const widgetAsset of widgetFiles) {
+//           const widgetAssetPath = path.join(widget.widgetPath, widgetAsset);
+//           const stats = fs.statSync(widgetAssetPath);
+//           if (stats.mtime > widget.modified) {
+//             if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
+//           }
+//         }
+//       }
+//       return widget;
+//     })
+//   );
+// };

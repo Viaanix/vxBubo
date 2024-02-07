@@ -59,7 +59,7 @@ export const promptMainMenu = async () => {
         name: 'Publish ALL Modified Widgets',
         value: 'publishModified',
         description: '🤖 Publish all modified widgets',
-        disabled: true
+        disabled: (disableHost || disableToken)
       },
       {
         name: 'Bundle Local Widget',

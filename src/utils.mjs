@@ -22,6 +22,21 @@ export const colorize = (style, message) => {
   return styles[style](message);
 };
 
+export const buboOutput = (emoji, style, message) => {
+  const emojiMap = {
+    bubo: '🦉',
+    robot: '🤖',
+    warning: '⚠️',
+    rocket: '🚀',
+    error: '❌',
+    success: '✅',
+    info: 'ℹ️'
+  };
+
+  const newMessage = emoji ? `${emojiMap[emoji] || emojiMap.bubo} ${message}` : message;
+  return colorize(style, newMessage);
+};
+
 // =============================
 // Filesystem Utils
 // =============================

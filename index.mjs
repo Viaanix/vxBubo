@@ -53,9 +53,9 @@ program
   .name('vx-bubo')
   .description('Your guide to developing ThingsBoard locally')
   .option('-p, --push', 'Publish local widgets to ThingsBoard')
-  .option('-s, --setup', 'Run the vx-bubo setup');
+  .option('-s, --setup', 'Run the vx-bubo setup')
 // .option('-b, --bundle', 'Bundle local widget')
-// .option('-pm, --publish-modified', 'Publish all modified local widgets to ThingsBoard')
+  .option('-fp, --force-publish', 'Publish all modified local widgets to ThingsBoard');
 // .option('-c, --clean', 'Clean local data such as host, token and widget id');
 
 program.parse();
@@ -66,7 +66,7 @@ const options = program.opts();
 // No option selected, lets show main menu
 export async function main (answer = null) {
   if (answer) { options[answer] = true; }
-  console.log(`MainFunction => answer: ${answer}`, options, Object.keys(options).length);
+  // console.log(`MainFunction => answer: ${answer}`, options, Object.keys(options).length);
 
   // Check for a token to continue
   if (!await checkTokenStatus()) {
@@ -103,10 +103,10 @@ export async function main (answer = null) {
     }
   }
 
-  if (options.publishModified) {
+  if (options.publishModified || options.forcePublish) {
     try {
       delete options.publishModified;
-      await promptPublishModifiedWidgets();
+      await promptPublishModifiedWidgets(options?.forcePublish);
     } catch (error) {
       handlePromptError(error);
     }

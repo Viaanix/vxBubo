@@ -1,5 +1,5 @@
 import { Separator } from '@inquirer/prompts';
-import { colorize } from '../utils.mjs';
+import { buboOutput, colorize } from '../utils.mjs';
 
 export const promptSeperator = (heading, style) => {
   let message = `- ${heading || ''} -------`;
@@ -12,6 +12,6 @@ export const promptSeperator = (heading, style) => {
 export const clearPrevious = { clearPromptOnDone: true };
 
 export const goodbye = () => {
-  console.log('🦉 Goodbye!');
+  console.log(buboOutput('bubo', 'success', 'Goodbye!'));
   process.exit(1);
 };
