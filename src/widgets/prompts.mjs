@@ -173,7 +173,7 @@ export const promptPublishModifiedWidgets = async (force = false) => {
     return await Promise.all(
       widgets.map((widget) => {
         // console.log(`Publishing ${widget.name} ${widget.value.id}`);
-        return publishLocalWidget(widget.id);
+        return publishLocalWidget(widget.value);
       })
     );
   };
@@ -211,7 +211,7 @@ export const promptPublishLocalWidgets = async () => {
 
   const widgetChoices = [];
 
-  if (widgetGrouping.modified.length) {
+  if (widgetGrouping?.modified?.length) {
     widgetChoices.push(promptSeperator('Modified Widgets', 'success'));
     widgetGrouping.modified.sort((a, b) => compareDesc(a.value.assetsModified, b.value.assetsModified));
     widgetChoices.push(...widgetGrouping.modified);
@@ -224,6 +224,12 @@ export const promptPublishLocalWidgets = async () => {
     widgetGrouping.clean.sort((a, b) => a.name.localeCompare(b.name));
     widgetChoices.push(...widgetGrouping.clean);
   }
+
+  if (!widgetChoices.length) {
+    console.log(buboOutput('warning', 'error', 'No widgets found to publish'));
+    goodbye();
+  }
+
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
     choices: widgetChoices,
@@ -247,7 +253,7 @@ const getLocalWidgetChoices = async () => {
   }
   return localWidgets.map((widget) => {
     let modifiedAgo = '';
-    if (widget?.assetsModified) {
+    if (widget?.assetsModified > widget?.modified) {
       modifiedAgo = chalk.italic.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
     }
     return { name: `${widget.name} ${modifiedAgo} `, value: widget, modifiedAgo };

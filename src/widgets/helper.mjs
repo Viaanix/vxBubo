@@ -100,7 +100,8 @@ export const discoverLocalWidgets = async () => {
       const widgetPathChunk = widget.replace('/widget.json', '');
       const widgetPath = path.join(localWidgetPath, widgetPathChunk);
       const stats = fs.statSync(referenceJsonPath);
-      return {
+
+      const payload = {
         name: widgetJson.name,
         id: widgetJson.protected.id.id,
         jsonPath: widgetJsonPath,
@@ -108,10 +109,16 @@ export const discoverLocalWidgets = async () => {
         modified: stats.mtime,
         assetsModified: await findModifiedAgo(widgetPath)
       };
+
+      if (stats.mtime > payload.assetsModified) {
+        payload.assetsModified = stats.mtime;
+      }
+
+      return payload;
     })
   );
   // Remove ignored widgets. TODO: Improve this so it clear to the user these were ignored.
-  localWidgets = localWidgets.filter((widget) => widget?.assetsModified && widget?.assetsModified !== 'ignore');
+  localWidgets = localWidgets.filter((widget) => widget.assetsModified && widget.assetsModified !== 'ignore');
   return localWidgets.sort((a, b) => compareDesc(a.assetsModified, b.assetsModified));
 };
 
@@ -123,7 +130,6 @@ export const findModifiedAgo = async (widgetPath) => {
       if (widgetAsset === '.ignore') return 'ignore';
       const widgetAssetPath = path.join(widgetPath, widgetAsset);
       const stats = fs.statSync(widgetAssetPath);
-      // console.log(widgetAsset, stats.mtime);
       if (stats.mtime > recentlyModified || !recentlyModified) {
         recentlyModified = stats.mtime;
       }
