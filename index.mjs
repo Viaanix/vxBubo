@@ -5,11 +5,12 @@ import chalk from 'chalk';
 import { handlePromptError, prompForToken, promptMainMenu } from './src/prompts/main.mjs';
 import { promptCreateWidget, promptPublishLocalWidgets, promptPublishModifiedWidgets, promptWidgetGetInteractive } from './src/widgets/prompts.mjs';
 import { checkTokenStatus } from './src/api/auth.mjs';
-import { findLocalWidgetsSourceIds } from './src/widgets/base.mjs';
+import { bundleLocalWidget, findLocalWidgetsSourceIds } from './src/widgets/base.mjs';
 import { promptSetup } from './src/prompts/setup.mjs';
 import { devLogging } from './src/logger.mjs';
 import { getLocalFile } from './src/utils.mjs';
 import { api } from './src/api/api.mjs';
+import { goodbye } from './src/prompts/helpers.mjs';
 // import { discoverLocalWidgets } from './src/widgets/helper.mjs';
 
 export const rootProjectPath = process.cwd();
@@ -62,7 +63,10 @@ program.parse();
 const options = program.opts();
 
 // TODO: FIX THIS NIGHTMARE!
-
+if (options.deployWidget) {
+  await bundleLocalWidget({ widgetPath: options.deployWidget });
+  goodbye();
+}
 // No option selected, lets show main menu
 export async function main (answer = null) {
   if (answer) { options[answer] = true; }
