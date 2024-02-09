@@ -55,6 +55,7 @@ program
   .description('Your guide to developing ThingsBoard locally')
   .option('-p, --push', 'Publish local widgets to ThingsBoard')
   .option('-s, --setup', 'Run the vx-bubo setup')
+  .option('-dw, --deployWidget <path>', 'Deploy Widget from local path')
 // .option('-b, --bundle', 'Bundle local widget')
   .option('-fp, --force-publish', 'Publish all modified local widgets to ThingsBoard');
 // .option('-c, --clean', 'Clean local data such as host, token and widget id');
