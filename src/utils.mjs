@@ -50,14 +50,6 @@ export const checkPath = async (dir) => {
   return fs.existsSync(dir);
 };
 
-// TODO: Update name
-export const validatePath = async (dirname) => {
-  if (!await checkPath(dirname)) {
-    fs.mkdirSync(dirname, { recursive: true });
-    log.error(`Cannot find ${dirname}, creating it.`);
-  }
-};
-
 /**
  * Creates a file at the specified path and writes data to it.
  * If the data parameter is an object, it is converted to JSON format.
@@ -116,30 +108,30 @@ export const getLocalFile = async (filePath) => {
  /**
   * This code snippet defines a function called `mergeDeep` that performs a deep merge of an array of objects.
   */
- export function mergeDeep(...objects) {
-   const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
-   const filteredObjects = objects.filter(isObject);
+export function mergeDeep (...objects) {
+  const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
+  const filteredObjects = objects.filter(isObject);
 
-   if (filteredObjects.length !== objects.length) {
-     throw new Error('Can only merge objects');
-   }
+  if (filteredObjects.length !== objects.length) {
+    throw new Error('Can only merge objects');
+  }
 
-   const target = {};
+  const target = {};
 
-   objects.forEach(source => {
-     Object.keys(source).forEach(key => {
-       const targetValue = target[key];
-       const sourceValue = source[key];
+  objects.forEach(source => {
+    Object.keys(source).forEach(key => {
+      const targetValue = target[key];
+      const sourceValue = source[key];
 
-       if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
-         target[key] = targetValue.concat(sourceValue);
-       } else if (isObject(targetValue) && isObject(sourceValue)) {
-         target[key] = mergeDeep({...targetValue}, sourceValue);
-       } else {
-         target[key] = sourceValue;
-       }
-     });
-   });
+      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+        target[key] = targetValue.concat(sourceValue);
+      } else if (isObject(targetValue) && isObject(sourceValue)) {
+        target[key] = mergeDeep({ ...targetValue }, sourceValue);
+      } else {
+        target[key] = sourceValue;
+      }
+    });
+  });
 
-   return target;
- }
+  return target;
+}
