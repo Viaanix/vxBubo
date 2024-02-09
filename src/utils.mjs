@@ -78,7 +78,7 @@ export const createFile = async (filePath, data) => {
  * Validates the path and creates the directory if it doesn't exist.
  * @param {string} directoryPath - The path of the directory to validate.
  */
-const validatePath = async (directoryPath) => {
+export const validatePath = async (directoryPath) => {
   if (!fs.existsSync(directoryPath)) {
     fs.mkdirSync(directoryPath, { recursive: true });
   }
