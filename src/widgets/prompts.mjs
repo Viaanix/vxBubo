@@ -5,7 +5,7 @@ import { fetchAndParseRemoteWidget, publishLocalWidget } from './base.mjs';
 import { getParsedToken } from '../api/auth.mjs';
 import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from './api.mjs';
 import { discoverLocalWidgets } from './helper.mjs';
-import { promptSeperator, clearPrevious, goodbye } from '../prompts/helpers.mjs';
+import { promptSeparator, clearPrevious, goodbye } from '../prompts/helpers.mjs';
 import { getActiveWidget, setWidgetId } from '../session.mjs';
 import { logger } from './../logger.mjs';
 import { buboOutput } from '../utils.mjs';
@@ -89,9 +89,9 @@ export const promptSelectWidgetBundle = async (promptMessage) => {
   });
 
   const bundleChoices = [
-    promptSeperator('Tenant Bundles'),
+    promptSeparator('Tenant Bundles'),
     ...bundleChoicesGrouped.get('tenant').sort((a, b) => a.name.localeCompare(b.name)),
-    promptSeperator('System Bundles'),
+    promptSeparator('System Bundles'),
     ...bundleChoicesGrouped.get('system').sort((a, b) => a.name.localeCompare(b.name))
   ];
 
@@ -212,11 +212,11 @@ export const promptPublishLocalWidgets = async () => {
   const widgetChoices = [];
 
   if (widgetGrouping?.modified?.length) {
-    widgetChoices.push(promptSeperator('Modified Widgets', 'success'));
+    widgetChoices.push(promptSeparator('Modified Widgets', 'success'));
     widgetGrouping.modified.sort((a, b) => compareDesc(a.value.assetsModified, b.value.assetsModified));
     widgetChoices.push(...widgetGrouping.modified);
     if (widgetGrouping?.clean?.length) {
-      widgetChoices.push(promptSeperator('Widgets'));
+      widgetChoices.push(promptSeparator('Widgets'));
     }
   }
 

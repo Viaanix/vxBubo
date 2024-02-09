@@ -41,6 +41,11 @@ export const buboOutput = (emoji, style, message) => {
 // Filesystem Utils
 // =============================
 
+/**
+ * Checks if a directory exists at the specified path.
+ * @param {string} dir - The path of the directory to be checked.
+ * @returns {Promise<boolean>} - Returns true if the directory exists, false otherwise.
+ */
 export const checkPath = async (dir) => {
   return fs.existsSync(dir);
 };
@@ -53,59 +58,88 @@ export const validatePath = async (dirname) => {
   }
 };
 
+/**
+ * Creates a file at the specified path and writes data to it.
+ * If the data parameter is an object, it is converted to JSON format.
+ * The function also validates the path before creating the file.
+ * @param {string} filePath - The path where the file should be created.
+ * @param {*} data - The data to be written to the file.
+ * @throws {Error} - If an error occurs during the file creation process.
+ */
 export const createFile = async (filePath, data) => {
-  // If object is passed convert to JSON for writing.
-  if (data instanceof Object) {
-    data = formatJson(data);
+  if (typeof data === 'object') {
+    data = JSON.stringify(data);
   }
-  // Validate path before creating a file
-  await validatePath(path.dirname(filePath));
+
+  const directoryPath = path.dirname(filePath);
+  await validatePath(directoryPath);
+
   try {
     fs.writeFileSync(filePath, data);
   } catch (error) {
-    log.error('createFile => ', error);
+    console.error('createFile => ', error);
     throw new Error(error);
   }
 };
 
+/**
+ * Validates the path and creates the directory if it doesn't exist.
+ * @param {string} directoryPath - The path of the directory to validate.
+ */
+const validatePath = async (directoryPath) => {
+  if (!fs.existsSync(directoryPath)) {
+    fs.mkdirSync(directoryPath, { recursive: true });
+  }
+};
+
+/**
+ * Reads the contents of a file specified by the filePath parameter.
+ * If the file is not found or there is an error reading it, an error is logged and an exception is thrown.
+ * @param {string} filePath - The path to the file to be read.
+ * @returns {Promise<string>} - The contents of the file specified by filePath.
+ */
 export const getLocalFile = async (filePath) => {
-  let fileRaw;
+  const childLogger = logger.child({ prefix: 'utils' });
+
   try {
-    fileRaw = fs.readFileSync(filePath, 'utf8');
+    const fileRaw = fs.readFileSync(filePath, 'utf8');
+    return fileRaw;
   } catch (error) {
-    log.error('getLocalFile =>', error);
+    childLogger.error('getLocalFile =>', error);
     throw new Error(error);
   }
-  return fileRaw;
 };
 
 /**
  * Performs a deep merge of an array of objects
  * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
- */
-export function mergeDeep (...objects) {
-  // console.log('objects =>', objects);
-  const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
-  const objectTest = objects.filter((obj) => isObject(obj));
-  // console.log('objectTest =>', objectTest);
+ /**
+  * This code snippet defines a function called `mergeDeep` that performs a deep merge of an array of objects.
+  */
+ export function mergeDeep(...objects) {
+   const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
+   const filteredObjects = objects.filter(isObject);
 
-  if (objectTest.length !== objects.length) {
-    throw new Error('Can only merge objects');
-  }
-  const target = {};
+   if (filteredObjects.length !== objects.length) {
+     throw new Error('Can only merge objects');
+   }
 
-  objects.forEach(source => {
-    Object.keys(source).forEach(key => {
-      const targetValue = target[key];
-      const sourceValue = source[key];
-      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
-        target[key] = targetValue.concat(sourceValue);
-      } else if (isObject(targetValue) && isObject(sourceValue)) {
-        target[key] = mergeDeep(Object.assign({}, targetValue), sourceValue);
-      } else {
-        target[key] = sourceValue;
-      }
-    });
-  });
-  return target;
-}
+   const target = {};
+
+   objects.forEach(source => {
+     Object.keys(source).forEach(key => {
+       const targetValue = target[key];
+       const sourceValue = source[key];
+
+       if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+         target[key] = targetValue.concat(sourceValue);
+       } else if (isObject(targetValue) && isObject(sourceValue)) {
+         target[key] = mergeDeep({...targetValue}, sourceValue);
+       } else {
+         target[key] = sourceValue;
+       }
+     });
+   });
+
+   return target;
+ }

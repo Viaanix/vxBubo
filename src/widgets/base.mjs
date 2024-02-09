@@ -133,17 +133,19 @@ export const publishLocalWidget = async (widget) => {
 };
 
 export const bundleLocalWidget = async (widget) => {
-  const widgetId = widget.id;
+  let widgetId = widget.id || null;
   const widgetPath = widget.widgetPath;
-  // guardRequireWidgetId(widgetId);
+
+  // Get localWidgetJson
+  let localWidgetJson = await getWidgetLocal(path.join(widgetPath, 'widget.json'));
+  if (!widget.id && widgetPath) {
+    widgetId = localWidgetJson.id;
+  }
 
   const widgetSourcePath = widgetJsonSourcePath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
   const bundleAlias = await getBundleAliasFromWidgetJson(widgetJsonSource);
   // const widgetPath = path.join(localWidgetPath, widgetLocalPath);
-
-  // Get localWidgetJson
-  let localWidgetJson = await getWidgetLocal(path.join(widgetPath, 'widget.json'));
 
   // Move Protected Keys back to root
   localWidgetJson = mergeDeep(localWidgetJson, localWidgetJson.protected);

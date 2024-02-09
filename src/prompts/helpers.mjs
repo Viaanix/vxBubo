@@ -1,7 +1,7 @@
 import { Separator } from '@inquirer/prompts';
 import { buboOutput, colorize } from '../utils.mjs';
 
-export const promptSeperator = (heading, style) => {
+export const promptSeparator = (heading, style) => {
   let message = `- ${heading || ''} -------`;
   if (style) {
     message = colorize(style, message);
