@@ -3,7 +3,7 @@ import { api } from './api/api.mjs';
 import { logger } from './logger.mjs';
 
 const localStorage = new LocalStorage('./.bubo');
-const log = logger.child({ prefix: 'utils' });
+const log = logger.child({ prefix: 'session' });
 
 export const resetTokens = () => {
   log.info('💾 Deleting Tokens!');
@@ -17,17 +17,18 @@ export const getToken = () => {
 };
 
 export const getRefreshToken = () => {
-  log.info('💾 Getting refreshToken from localstorage');
+  log.debug('💾 Getting refreshToken from localstorage');
   return localStorage.getItem('refreshToken');
 };
 
 export const getActiveWidget = () => {
+  log.debug('💾 Getting widgetId from localstorage');
   const widgetId = localStorage.getItem('widgetId');
   return widgetId ? widgetId.trim() : widgetId;
 };
 
 export const setUserAuthToken = (token) => {
-  log.info('💾 Setting authToke in localstorage');
+  log.debug('💾 Setting authToke in localstorage');
   // Force removal of `Bearer` then add it back to ensure it's a consistent experience. Kludge, yeah so?
   token = token.replace('Bearer', '').trim();
   api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -35,12 +36,12 @@ export const setUserAuthToken = (token) => {
 };
 
 export const setUserRefreshToken = (token) => {
-  log.info('💾 Setting refreshToken');
+  log.debug('💾 Setting refreshToken');
   localStorage.setItem('refreshToken', token);
 };
 
 export const setWidgetId = (widgetId) => {
-  log.info('💾 Setting widgetId');
+  log.debug('💾 Setting widgetId');
   localStorage.setItem('widgetId', widgetId);
 };
 

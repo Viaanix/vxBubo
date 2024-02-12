@@ -1,7 +1,8 @@
 import path from 'path';
 import fs from 'fs';
-import { scratchPath, localWidgetPath } from '../index.mjs';
 import { logger } from './logger.mjs';
+import chalk from 'chalk';
+// import { getWidgetTenant } from './api/widget.mjs';
 
 const log = logger.child({ prefix: 'utils' });
 
@@ -9,137 +10,143 @@ export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
 };
 
+/**
+ * Applies a specified style to a given message.
+ * @param {string} style - The style to apply to the message. Can be one of: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - The message to be styled.
+ * @returns {string} - The styled message with the specified style applied.
+ */
+export const colorize = (style, message) => {
+  const styles = {
+    error: chalk.bold.red,
+    warning: chalk.bold.yellow,
+    success: chalk.bold.green,
+    info: chalk.bold.blue
+  };
+
+  const styleFunction = styles[style];
+  return styleFunction(message);
+};
+
+/**
+ * Returns a colored and formatted message based on the provided parameters.
+ * @param {string} emoji - An optional parameter representing an emoji to be added to the message.
+ * @param {string} style - A required parameter representing the style of the message. It can be one of the following: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - A required parameter representing the main content of the message.
+ * @returns {string} - A colored and formatted message based on the provided style and message parameters.
+ */
+export const buboOutput = (emoji = 'bubo', style, message) => {
+  const emojiMap = {
+    bubo: '🦉',
+    robot: '🤖',
+    warning: '⚠️',
+    rocket: '🚀',
+    error: '❌',
+    success: '✅',
+    info: 'ℹ️'
+  };
+
+  const newMessage = `${emojiMap[emoji] || emojiMap.bubo} ${message}`;
+  return colorize(style, newMessage);
+};
+
 // =============================
 // Filesystem Utils
 // =============================
 
+/**
+ * Checks if a directory exists at the specified path.
+ * @param {string} dir - The path of the directory to be checked.
+ * @returns {Promise<boolean>} - Returns true if the directory exists, false otherwise.
+ */
 export const checkPath = async (dir) => {
   return fs.existsSync(dir);
 };
 
-// TODO: Update name
-export const validatePath = async (dirname) => {
-  if (!await checkPath(dirname)) {
-    fs.mkdirSync(dirname, { recursive: true });
-    log.error(`Cannot find ${dirname}, creating it.`);
-  }
-};
-
+/**
+ * Creates a file at the specified path and writes data to it.
+ * If the data parameter is an object, it is converted to JSON format.
+ * The function also validates the path before creating the file.
+ * @param {string} filePath - The path where the file should be created.
+ * @param {*} data - The data to be written to the file.
+ * @throws {Error} - If an error occurs during the file creation process.
+ */
 export const createFile = async (filePath, data) => {
-  // If object is passed convert to JSON for writing.
-  if (data instanceof Object) {
-    data = formatJson(data);
+  if (typeof data === 'object') {
+    data = JSON.stringify(data);
   }
-  // Validate path before creating a file
-  await validatePath(path.dirname(filePath));
+
+  const directoryPath = path.dirname(filePath);
+  await validatePath(directoryPath);
+
   try {
     fs.writeFileSync(filePath, data);
   } catch (error) {
-    log.error(error);
+    console.error('createFile => ', error);
     throw new Error(error);
   }
 };
 
+/**
+ * Validates the path and creates the directory if it doesn't exist.
+ * @param {string} directoryPath - The path of the directory to validate.
+ */
+export const validatePath = async (directoryPath) => {
+  if (!fs.existsSync(directoryPath)) {
+    fs.mkdirSync(directoryPath, { recursive: true });
+  }
+};
+
+/**
+ * Reads the contents of a file specified by the filePath parameter.
+ * If the file is not found or there is an error reading it, an error is logged and an exception is thrown.
+ * @param {string} filePath - The path to the file to be read.
+ * @returns {Promise<string>} - The contents of the file specified by filePath.
+ */
 export const getLocalFile = async (filePath) => {
-  let fileRaw;
+  const childLogger = logger.child({ prefix: 'utils' });
+
   try {
-    fileRaw = fs.readFileSync(filePath, 'utf8');
+    const fileRaw = fs.readFileSync(filePath, 'utf8');
+    return fileRaw;
   } catch (error) {
-    log.error(error);
+    childLogger.error('getLocalFile =>', error);
     throw new Error(error);
   }
-  return fileRaw;
-};
-
-export const getWidgetLocal = async (widgetPath) => {
-  const widgetJsonRaw = await getLocalFile(widgetPath);
-  return JSON.parse(widgetJsonRaw);
-};
-
-export const discoverLocalWidgetJsons = async () => {
-  const widgetJsonDir = path.join(scratchPath, 'widgets');
-  const localWidgets = [];
-
-  try {
-    await Promise.all(
-      fs.readdirSync(widgetJsonDir).map(async (file) => {
-        if (!file.includes('bak')) {
-          const fileExt = path.extname(file);
-          const widgetJsonPath = path.join(widgetJsonDir, file);
-
-          if (fileExt === '.json') {
-            const widgetJson = await getWidgetLocal(widgetJsonPath);
-            const widgetPath = path.join(localWidgetPath, widgetJson.bundleAlias, widgetJson.name);
-            const stats = fs.statSync(widgetJsonPath);
-            const payload = {
-              name: widgetJson.name,
-              id: file.split('.')[0],
-              jsonPath: widgetJsonPath,
-              widgetPath,
-              modified: stats.mtime
-            };
-            localWidgets.push(payload);
-          }
-        }
-      })
-    );
-  } catch (error) {
-    // console.log('Error =>', error);
-  }
-  return localWidgets;
-};
-
-export const findLocalWidgetsWithModifiedAssets = async () => {
-  const localWidgets = await discoverLocalWidgetJsons();
-
-  if (localWidgets.length === 0) {
-    console.log('Nada');
-    return;
-  }
-  return await Promise.all(
-    localWidgets.map(async (widget) => {
-      if (await checkPath(widget.widgetPath)) {
-        const widgetFiles = await fs.readdirSync(widget.widgetPath, { recursive: true });
-        for (const widgetAsset of widgetFiles) {
-          const widgetAssetPath = path.join(widget.widgetPath, widgetAsset);
-          const stats = fs.statSync(widgetAssetPath);
-          if (stats.mtime > widget.modified) {
-            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
-          }
-        }
-      }
-      return widget;
-    })
-  );
 };
 
 /**
  * Performs a deep merge of an array of objects
  * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
+ * @param {...Object} objects - An array of objects to be merged
+ * @returns {Object} - A new object that is a deep merge of all the input objects
  */
 export function mergeDeep (...objects) {
-  // console.log('objects =>', objects);
   const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
-  const objectTest = objects.filter((obj) => isObject(obj));
-  // console.log('objectTest =>', objectTest);
+  const filteredObjects = objects.filter(isObject);
 
-  if (objectTest.length !== objects.length) {
+  if (filteredObjects.length !== objects.length) {
     throw new Error('Can only merge objects');
   }
+
   const target = {};
 
   objects.forEach(source => {
-    Object.keys(source).forEach(key => {
+    for (const key in source) {
       const targetValue = target[key];
       const sourceValue = source[key];
-      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      const isTargetArray = Array.isArray(targetValue);
+      const isSourceArray = Array.isArray(sourceValue);
+
+      if (isTargetArray && isSourceArray) {
         target[key] = targetValue.concat(sourceValue);
       } else if (isObject(targetValue) && isObject(sourceValue)) {
-        target[key] = mergeDeep(Object.assign({}, targetValue), sourceValue);
+        target[key] = mergeDeep({ ...targetValue }, sourceValue);
       } else {
-        target[key] = sourceValue;
+        Object.assign(target, { [key]: sourceValue });
       }
-    });
+    }
   });
+
   return target;
 }

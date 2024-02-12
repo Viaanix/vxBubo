@@ -1,12 +1,16 @@
-import { getActiveWidget, setWidgetId } from '../session.mjs';
 import { checkbox, confirm, input, select } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { fetchAndParseRemoteWidget, publishLocalWidget } from '../widget.mjs';
+import { formatDistanceToNow, compareDesc } from 'date-fns';
+import { fetchAndParseRemoteWidget, publishLocalWidget } from './base.mjs';
 import { getParsedToken } from '../api/auth.mjs';
-import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from '../api/widget.mjs';
-import { findLocalWidgetsWithModifiedAssets } from '../utils.mjs';
-import { formatDistanceToNow } from 'date-fns';
-import { clearPrevious, goodbye } from './main.mjs';
+import { createWidget, getAllWidgetBundles, getAllWidgetByBundleAlias } from './api.mjs';
+import { discoverLocalWidgets } from './helper.mjs';
+import { promptSeparator, clearPrevious, goodbye } from '../prompts/helpers.mjs';
+import { getActiveWidget, setWidgetId } from '../session.mjs';
+import { logger } from './../logger.mjs';
+import { buboOutput } from '../utils.mjs';
+
+const log = logger.child({ prefix: 'prompts-widget' });
 
 export const promptWidgetGetInteractive = async () => {
   const widgetId = await getActiveWidget() || '';
@@ -57,6 +61,8 @@ export const promptWidgetGetInteractive = async () => {
     );
     console.log(`🦉 ${chalk.bold.green('Widgets have been downloaded and ready to develop')}`);
   } catch (error) {
+    log.error(error);
+    console.log('error =>', error);
     console.log(`🦉 ${chalk.bold.red('Unable to download widget')}`);
   }
   goodbye();
@@ -68,21 +74,32 @@ export const promptSelectWidgetBundle = async (promptMessage) => {
 
   promptMessage = promptMessage || 'Select a Widget Bundle';
 
-  const bundleChoices = widgetBundles.data.map(bundle => {
+  const bundleChoicesFormatted = widgetBundles.map(bundle => {
     const isSystem = parsedToken.tenantId !== bundle.tenantId.id;
     return {
       name: isSystem ? `${bundle.title} ${`${chalk.yellow('(system)')}`}` : bundle.title,
+      type: isSystem ? 'system' : 'tenant',
       value: { bundleAlias: bundle.alias, isSystem },
       description: bundle.description
     };
   });
 
-  const bundleAnswer = await select({
+  const bundleChoicesGrouped = Map.groupBy(bundleChoicesFormatted, bundle => {
+    return bundle.type;
+  });
+
+  const bundleChoices = [
+    promptSeparator('Tenant Bundles'),
+    ...bundleChoicesGrouped.get('tenant').sort((a, b) => a.name.localeCompare(b.name)),
+    promptSeparator('System Bundles'),
+    ...bundleChoicesGrouped.get('system').sort((a, b) => a.name.localeCompare(b.name))
+  ];
+
+  return select({
     message: `🦉 ${promptMessage}`,
     loop: false,
-    choices: bundleChoices.sort((a, b) => a.name.localeCompare(b.name))
+    choices: bundleChoices
   });
-  return bundleAnswer;
 };
 
 export const promptSelectWidgetsFromWidgetBundle = async (bundleAlias, isSystem) => {
@@ -95,7 +112,7 @@ export const promptSelectWidgetsFromWidgetBundle = async (bundleAlias, isSystem)
     };
   });
 
-  return await checkbox({
+  return checkbox({
     message: '🦉 Select widget(s)',
     loop: false,
     required: true,
@@ -147,39 +164,82 @@ export const promptCreateWidget = async () => {
     bundleAlias: widgetBundleAnswer.bundleAlias
   };
   const createNewWidget = await createWidget(typeAnswer.bundleAlias, true, typeAnswer.alias, payload);
-  const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.data.name}?` });
-  if (answer) fetchAndParseRemoteWidget(createNewWidget.data.id.id);
+  const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.name}?` });
+  if (answer) fetchAndParseRemoteWidget(createNewWidget.id.id);
 };
 
-export const promptPublishModifiedWidgets = async () => {
-  const localWidgets = await findLocalWidgetsWithModifiedAssets();
-
-  const modifiedWidgets = localWidgets.filter((widget) => widget?.assetsModified);
-  if (modifiedWidgets) {
-    await Promise.all(
-      modifiedWidgets.map((widget) => {
-        return publishLocalWidget(widget.id);
+export const promptPublishModifiedWidgets = async (force = false) => {
+  const publishWidgets = async (widgets) => {
+    return await Promise.all(
+      widgets.map((widget) => {
+        // console.log(`Publishing ${widget.name} ${widget.value.id}`);
+        return publishLocalWidget(widget.value);
       })
     );
-  } else {
+  };
+
+  const localWidgets = await getLocalWidgetChoices();
+  const modifiedWidgets = localWidgets.filter((widget) => widget?.modifiedAgo);
+  if (modifiedWidgets.length === 0) {
     console.log(chalk.yellowBright('🦉 No changes to widgets found.'));
+    goodbye();
+  }
+  let answer = false;
+
+  if (!force) {
+    const widgetList = modifiedWidgets.map((widget) => `\n- ${widget.name}`);
+    answer = await confirm({ message: `Do you about to publish the following widgets? ${widgetList} \n` });
+  } else {
+    console.log(buboOutput('warning', 'info', 'Force publishing all modified widgets'));
+  }
+
+  if (answer || force) {
+    await publishWidgets(modifiedWidgets);
+  } else {
+    console.log(buboOutput('bubo', 'info', 'No widgets were published.'));
   }
   goodbye();
 };
 
 export const promptPublishLocalWidgets = async () => {
-  const widgetChoices = await getLocalWidgetChoices();
+  const localWidgets = await getLocalWidgetChoices();
+
+  // Group Widgets by modified and unmodified
+  const widgetGrouping = Object.groupBy(localWidgets, widget => {
+    return widget.modifiedAgo !== '' ? 'modified' : 'clean';
+  });
+
+  const widgetChoices = [];
+
+  if (widgetGrouping?.modified?.length) {
+    widgetChoices.push(promptSeparator('Modified Widgets', 'success'));
+    widgetGrouping.modified.sort((a, b) => compareDesc(a.value.assetsModified, b.value.assetsModified));
+    widgetChoices.push(...widgetGrouping.modified);
+    if (widgetGrouping?.clean?.length) {
+      widgetChoices.push(promptSeparator('Widgets'));
+    }
+  }
+
+  if (widgetGrouping?.clean?.length) {
+    widgetGrouping.clean.sort((a, b) => a.name.localeCompare(b.name));
+    widgetChoices.push(...widgetGrouping.clean);
+  }
+
+  if (!widgetChoices.length) {
+    console.log(buboOutput('warning', 'error', 'No widgets found to publish'));
+    goodbye();
+  }
 
   const answer = await checkbox({
     message: '🦉 What widgets would you like to publish?',
-    choices: widgetChoices.sort((a, b) => a.modifiedAgo.localeCompare(b.modifiedAgo)),
+    choices: widgetChoices,
     loop: false,
     required: true
   }, clearPrevious);
 
   await Promise.all(
     answer.map(async (widget) => {
-      return await publishLocalWidget(widget.id);
+      return await publishLocalWidget(widget);
     })
   );
   goodbye();
@@ -187,13 +247,13 @@ export const promptPublishLocalWidgets = async () => {
 
 // Helpers
 const getLocalWidgetChoices = async () => {
-  const localWidgets = await findLocalWidgetsWithModifiedAssets();
-  // if (localWidgets.length === 0) {
-  // return localWidgets;
-  // }
+  const localWidgets = await discoverLocalWidgets();
+  if (localWidgets.length === 0) {
+    return localWidgets;
+  }
   return localWidgets.map((widget) => {
     let modifiedAgo = '';
-    if (widget?.assetsModified) {
+    if (widget?.assetsModified > widget?.modified) {
       modifiedAgo = chalk.italic.yellow(`modified: ${formatDistanceToNow(widget.assetsModified)} ago`);
     }
     return { name: `${widget.name} ${modifiedAgo} `, value: widget, modifiedAgo };
