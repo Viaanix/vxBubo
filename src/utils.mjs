@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'fs';
-// import { scratchPath, localWidgetPath } from '../index.mjs';
 import { logger } from './logger.mjs';
 import chalk from 'chalk';
 // import { getWidgetTenant } from './api/widget.mjs';
@@ -11,18 +10,32 @@ export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
 };
 
+/**
+ * Applies a specified style to a given message.
+ * @param {string} style - The style to apply to the message. Can be one of: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - The message to be styled.
+ * @returns {string} - The styled message with the specified style applied.
+ */
 export const colorize = (style, message) => {
   const styles = {
     error: chalk.bold.red,
-    warning: chalk.bold.yellow, // Orange color
+    warning: chalk.bold.yellow,
     success: chalk.bold.green,
     info: chalk.bold.blue
   };
 
-  return styles[style](message);
+  const styleFunction = styles[style];
+  return styleFunction(message);
 };
 
-export const buboOutput = (emoji, style, message) => {
+/**
+ * Returns a colored and formatted message based on the provided parameters.
+ * @param {string} emoji - An optional parameter representing an emoji to be added to the message.
+ * @param {string} style - A required parameter representing the style of the message. It can be one of the following: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - A required parameter representing the main content of the message.
+ * @returns {string} - A colored and formatted message based on the provided style and message parameters.
+ */
+export const buboOutput = (emoji = 'bubo', style, message) => {
   const emojiMap = {
     bubo: '🦉',
     robot: '🤖',
@@ -33,7 +46,7 @@ export const buboOutput = (emoji, style, message) => {
     info: 'ℹ️'
   };
 
-  const newMessage = emoji ? `${emojiMap[emoji] || emojiMap.bubo} ${message}` : message;
+  const newMessage = `${emojiMap[emoji] || emojiMap.bubo} ${message}`;
   return colorize(style, newMessage);
 };
 
@@ -105,9 +118,9 @@ export const getLocalFile = async (filePath) => {
 /**
  * Performs a deep merge of an array of objects
  * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
- /**
-  * This code snippet defines a function called `mergeDeep` that performs a deep merge of an array of objects.
-  */
+ * @param {...Object} objects - An array of objects to be merged
+ * @returns {Object} - A new object that is a deep merge of all the input objects
+ */
 export function mergeDeep (...objects) {
   const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
   const filteredObjects = objects.filter(isObject);
@@ -119,18 +132,20 @@ export function mergeDeep (...objects) {
   const target = {};
 
   objects.forEach(source => {
-    Object.keys(source).forEach(key => {
+    for (const key in source) {
       const targetValue = target[key];
       const sourceValue = source[key];
+      const isTargetArray = Array.isArray(targetValue);
+      const isSourceArray = Array.isArray(sourceValue);
 
-      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+      if (isTargetArray && isSourceArray) {
         target[key] = targetValue.concat(sourceValue);
       } else if (isObject(targetValue) && isObject(sourceValue)) {
         target[key] = mergeDeep({ ...targetValue }, sourceValue);
       } else {
-        target[key] = sourceValue;
+        Object.assign(target, { [key]: sourceValue });
       }
-    });
+    }
   });
 
   return target;

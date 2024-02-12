@@ -1,10 +1,17 @@
 import axios from 'axios';
 import { getToken, resetTokens } from '../session.mjs';
-import { logger, axiosResponseError } from '../logger.mjs';
+import { logger } from '../logger.mjs';
 import { refreshExpiredToken } from './auth.mjs';
 
 const log = logger.child({ prefix: 'api-core' });
 
+/**
+ * Returns an object with a `headers` property that contains an `Authorization` header.
+ * The value of the `Authorization` header is either the provided `token` or the result of calling the `getToken` function.
+ *
+ * @param {string} token - The token to be used for the `Authorization` header.
+ * @returns {Object} - An object with a `headers` property that contains an `Authorization` header.
+ */
 export const authHeaders = (token) => {
   return {
     headers: {
@@ -13,6 +20,10 @@ export const authHeaders = (token) => {
   };
 };
 
+/**
+ * Returns the headers object for making a JSON content request.
+ * @returns {Object} The headers object.
+ */
 export const jsonContentHeaders = () => {
   return {
     headers: {
@@ -44,16 +55,24 @@ api.interceptors.request.use(
   }
 );
 
-/*
-* Axios Response Interceptor
-*/
+/**
+ * Intercept the response from an API request and handle authentication failures.
+ * If the response status is 401 (Unauthorized), it checks if the original request was for refreshing the token.
+ * If not, it attempts to refresh the expired token and resend the original request with the updated token.
+ * If the token refresh fails or the original request was for refreshing the token, it resets the tokens and rejects the error.
+ * Otherwise, it rejects the error.
+ *
+ * @param {Object} response - The response object from the API request.
+ * @returns {Object} - The response object.
+ * @throws {Error} - If the authentication fails or an error occurs during token refresh.
+ */
 api.interceptors.response.use(
   function (response) {
     return response;
   },
   async function (error) {
     const originalRequest = error.config;
-    axiosResponseError('error', error.response);
+    log.http(error);
     const authFailuresMessages = ['Authentication failed', 'Token has expired'];
     // If auth fails lets try to fix the situation.
     if (error.response.status === 401) {
@@ -66,13 +85,13 @@ api.interceptors.response.use(
         log.info(`💩 Token Refresh Started - ${error.response.status}: ${error.response.data.message}`);
         try {
           await refreshExpiredToken();
+          originalRequest._retry = true;
+          log.debug('UpdatedTokenResponse =>', originalRequest);
+          originalRequest.headers.Authorization = getToken();
+          return api(originalRequest);
         } catch (error) {
           return Promise.reject(error);
         }
-        originalRequest._retry = true;
-        log.debug('UpdatedTokenResponse =>', originalRequest);
-        originalRequest.headers.Authorization = getToken();
-        return api(originalRequest);
       }
     }
     return Promise.reject(error);

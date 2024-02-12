@@ -35,14 +35,3 @@ export const devLogging = () => {
 //     message: JSON.stringify(message)
 //   });
 // };
-
-export const axiosResponseError = (level, error) => {
-  const message = `❌ - Axios Response ${error.status} 
-  url: ${error.config.url}
-  method: ${error.config.method}
-  headers : ${error.config.headers}
-  body : ${error.config.body}
-  message : ${error.error?.data?.message}
-  `;
-  return logger.log(level, message);
-};

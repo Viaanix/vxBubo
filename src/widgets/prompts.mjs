@@ -74,7 +74,7 @@ export const promptSelectWidgetBundle = async (promptMessage) => {
 
   promptMessage = promptMessage || 'Select a Widget Bundle';
 
-  const bundleChoicesFormatted = widgetBundles.data.map(bundle => {
+  const bundleChoicesFormatted = widgetBundles.map(bundle => {
     const isSystem = parsedToken.tenantId !== bundle.tenantId.id;
     return {
       name: isSystem ? `${bundle.title} ${`${chalk.yellow('(system)')}`}` : bundle.title,
@@ -164,8 +164,8 @@ export const promptCreateWidget = async () => {
     bundleAlias: widgetBundleAnswer.bundleAlias
   };
   const createNewWidget = await createWidget(typeAnswer.bundleAlias, true, typeAnswer.alias, payload);
-  const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.data.name}?` });
-  if (answer) fetchAndParseRemoteWidget(createNewWidget.data.id.id);
+  const answer = await confirm({ message: `🦉 Would you like to download ${createNewWidget.name}?` });
+  if (answer) fetchAndParseRemoteWidget(createNewWidget.id.id);
 };
 
 export const promptPublishModifiedWidgets = async (force = false) => {

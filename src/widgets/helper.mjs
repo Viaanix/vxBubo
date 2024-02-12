@@ -9,47 +9,85 @@ import { logger } from '../logger.mjs';
 
 const log = logger.child({ prefix: 'widget-helper' });
 
+/**
+ * Validates if a widgetId is provided.
+ * @param {string} widgetId - The ID of the widget that needs to be validated.
+ * @throws {Error} - Throws an error if widgetId is not provided.
+ */
 export const guardRequireWidgetId = (widgetId) => {
   if (!widgetId) {
     throw new Error('Specify a widgetId');
   }
 };
 
+/**
+ * Returns the path to the JSON file corresponding to the provided widgetId.
+ * @param {string} widgetId - The ID of the widget.
+ * @returns {string} - The path to the JSON file.
+ */
 export const widgetJsonSourcePath = (widgetId) => {
+  // Ensure a valid widgetId is provided
   guardRequireWidgetId(widgetId);
-  return path.join(scratchPath, 'widgets', `${widgetId}.json`);
+
+  // Concatenate the scratchPath, 'widgets' directory, and widgetId with a '.json' extension
+  const jsonPath = path.join(scratchPath, 'widgets', `${widgetId}.json`);
+
+  return jsonPath;
 };
 
+/**
+ * Retrieves the contents of a widget JSON file from the local file system.
+ * @param {string} widgetPath - The path to the widget JSON file on the local file system.
+ * @returns {Promise<object>} - The parsed JSON object from the widget JSON file.
+ */
 export const getWidgetLocal = async (widgetPath) => {
-  const widgetJsonRaw = await getLocalFile(widgetPath);
-  return JSON.parse(widgetJsonRaw);
+  try {
+    const widgetJsonRaw = await getLocalFile(widgetPath);
+    return JSON.parse(widgetJsonRaw);
+  } catch (error) {
+    console.error(`Error retrieving widget JSON file: ${error}`);
+    throw error;
+  }
 };
 
+/**
+ * Retrieves the bundle alias from a widget JSON object.
+ * If the bundle alias is not present, it extracts the first chunk of the fully qualified name (fqn) property.
+ * If the fqn property has less than 2 chunks, it logs an error message and fetches the tenant info.
+ * @param {Object} widgetJson - The widget JSON object containing the bundleAlias and fqn properties.
+ * @returns {Promise<string>} - The bundle alias or the first chunk of the fqn property.
+ */
 export const getBundleAliasFromWidgetJson = async (widgetJson) => {
   if (widgetJson?.bundleAlias) {
     return widgetJson.bundleAlias;
   } else {
     const { fqn } = widgetJson;
-    const fqnChunk = fqn.split('.');
-    if (fqnChunk.length < 2) {
+    const fqnChunks = fqn.split('.');
+    if (fqnChunks.length < 2) {
       log.error(`Cannot find bundleAlias ${widgetJson.tenantId.id}`);
       const tenantInfo = await getWidgetTenant(widgetJson.tenantId.id);
-      log.error(`Cannot find bundleAlias but found tenantName ${tenantInfo.data.name}`);
-      return tenantInfo.data.name;
+      log.error(`Cannot find bundleAlias but found tenantName ${tenantInfo.name}`);
+      return tenantInfo.name;
     }
-    log.info(`widgetJSON fqn: ${fqn} bundleAlias: ${fqnChunk[0]} alias: ${fqnChunk[1]}`);
-    return fqnChunk[0];
+    const [bundleAlias] = fqnChunks;
+    log.info(`widgetJSON fqn: ${fqn} bundleAlias: ${bundleAlias} alias: ${fqnChunks[1]}`);
+    return bundleAlias;
   }
 };
 
+/**
+ * Retrieves the alias from the given widget JSON object.
+ *
+ * @param {Object} widgetJson - The widget JSON object.
+ * @returns {string} The alias of the widget. If the alias is not present, it returns the second chunk of the fully qualified name (fqn) or the first chunk if the fqn has only one chunk.
+ */
 export const getAliasFromWidgetJson = (widgetJson) => {
-  if (widgetJson?.alias) {
-    return widgetJson.alias;
-  } else {
-    const { fqn } = widgetJson;
-    const fqnChunk = fqn.split('.');
-    return fqnChunk[1] || fqnChunk[0];
+  const { alias, fqn } = widgetJson;
+  if (alias) {
+    return alias;
   }
+  const fqnChunk = fqn.split('.');
+  return fqnChunk[1] || fqnChunk[0];
 };
 
 /**
@@ -87,14 +125,15 @@ export const discoverLocalWidgets = async () => {
         jsonPath: widgetJsonPath,
         widgetPath,
         modified: stats.mtime,
-        assetsModified: stats.mtime > assetsModified ? stats.mtime : assetsModified
+        assetsModified: stats.mtime > assetsModified || assetsModified === 'ignore' ? stats.mtime : assetsModified,
+        ignore: assetsModified === 'ignore'
       };
 
       return payload;
     })
   );
   // Remove ignored widgets. TODO: Improve this so it clear to the user these were ignored.
-  const filteredWidgets = localWidgets.filter((widget) => widget.assetsModified && widget.assetsModified !== 'ignore');
+  const filteredWidgets = localWidgets.filter((widget) => !widget.ignore);
   return filteredWidgets.sort((a, b) => compareDesc(a.assetsModified, b.assetsModified));
 };
 

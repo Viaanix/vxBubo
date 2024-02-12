@@ -2,16 +2,15 @@
 import path from 'path';
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { handlePromptError, prompForToken, promptMainMenu } from './src/prompts/main.mjs';
+import { handlePromptError, prompForToken as promptForToken, promptMainMenu } from './src/prompts/main.mjs';
 import { promptCreateWidget, promptPublishLocalWidgets, promptPublishModifiedWidgets, promptWidgetGetInteractive } from './src/widgets/prompts.mjs';
 import { checkTokenStatus } from './src/api/auth.mjs';
-import { bundleLocalWidget, findLocalWidgetsSourceIds } from './src/widgets/base.mjs';
+import { publishLocalWidget, findLocalWidgetsSourceIds } from './src/widgets/base.mjs';
 import { promptSetup } from './src/prompts/setup.mjs';
 import { devLogging } from './src/logger.mjs';
 import { getLocalFile } from './src/utils.mjs';
 import { api } from './src/api/api.mjs';
 import { goodbye } from './src/prompts/helpers.mjs';
-// import { discoverLocalWidgets } from './src/widgets/helper.mjs';
 
 export const rootProjectPath = process.cwd();
 export let config = null;
@@ -53,10 +52,13 @@ const program = new Command();
 program
   .name('vx-bubo')
   .description('Your guide to developing ThingsBoard locally')
-  .option('-p, --push', 'Publish local widgets to ThingsBoard')
-  .option('-s, --setup', 'Run the vx-bubo setup')
+  .option('-g, --get', 'Get widget(s)')
+  .option('-p, --push', 'Publish local widget(s)')
+  .option('-pm, --publish-modified', '⚠️ Publish all modified local widgets ')
   .option('-dw, --deployWidget <path>', 'Deploy Widget from local path')
-// .option('-b, --bundle', 'Bundle local widget')
+  .option('-s, --setup', 'Run the vx-bubo setup')
+
+  // .option('-b, --bundle', 'Bundle local widget')
   .option('-fp, --force-publish', 'Publish all modified local widgets to ThingsBoard');
 // .option('-c, --clean', 'Clean local data such as host, token and widget id');
 
@@ -65,18 +67,22 @@ const options = program.opts();
 
 // TODO: FIX THIS NIGHTMARE!
 if (options.deployWidget) {
-  await bundleLocalWidget({ widgetPath: options.deployWidget });
+  await publishLocalWidget({ widgetPath: options.deployWidget });
   goodbye();
 }
-// No option selected, lets show main menu
+/**
+ * The `main` function is the entry point of the program. It handles the main flow of the application based on the user's input.
+ * @param {string} answer - The user's input from the main menu.
+ * @returns {Promise<void>} - A promise that resolves when the main function completes its execution.
+ */
 export async function main (answer = null) {
-  if (answer) { options[answer] = true; }
-  // console.log(`MainFunction => answer: ${answer}`, options, Object.keys(options).length);
+  if (answer) {
+    options[answer] = true;
+  }
 
-  // Check for a token to continue
   if (!await checkTokenStatus()) {
     try {
-      await prompForToken();
+      await promptForToken();
     } catch (error) {
       handlePromptError(error);
     }
@@ -102,7 +108,7 @@ export async function main (answer = null) {
   if (options.token) {
     try {
       delete options.token;
-      await prompForToken();
+      await promptForToken();
     } catch (error) {
       handlePromptError(error);
     }
@@ -126,7 +132,6 @@ export async function main (answer = null) {
     }
   }
 
-  // Get Widget from ThingsBoard
   if (options.get) {
     try {
       delete options.get;
@@ -145,7 +150,6 @@ export async function main (answer = null) {
     }
   }
 
-  // Publish Local Widget?
   if (options.push) {
     try {
       delete options.push;
@@ -155,10 +159,13 @@ export async function main (answer = null) {
     }
   }
 
+  /**
+   * Shows the main menu to the user and returns the user's answer.
+   * @returns {Promise<string>} - A promise that resolves with the user's answer.
+   */
   async function showMainMenu () {
     try {
-      // const answer =
-      await promptMainMenu();
+      const answer = await promptMainMenu();
       // options[answer] = true;
       return answer;
     } catch (error) {
@@ -168,6 +175,3 @@ export async function main (answer = null) {
 }
 
 await main();
-//
-// const yolo = await discoverLocalWidgets();
-// console.log('yolo =>', yolo);

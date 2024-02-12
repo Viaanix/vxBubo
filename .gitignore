@@ -27,4 +27,4 @@ node_modules/**/*
 logs/
 widgets/**/*
 bubo.config.json
-.bubo
+.bubo/*
