@@ -38,6 +38,18 @@ export const promptMainMenu = async () => {
       disabled: disableHost
     },
     {
+      name: 'Get Dashboard',
+      value: 'getDashboard',
+      description: 'Download a dashboard from ThingsBoard',
+      disabled: (disableHost || disableToken)
+    },
+    {
+      name: 'Publish Dashboard',
+      value: 'pushDashboard',
+      description: 'Publish a dashboard to ThingsBoard',
+      disabled: (disableHost || disableToken)
+    },
+    {
       name: 'Create Widget',
       value: 'create',
       description: 'Create a new widget in a Widget bundle',

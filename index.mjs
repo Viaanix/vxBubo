@@ -11,6 +11,7 @@ import { devLogging } from './src/logger.mjs';
 import { getLocalFile } from './src/utils.mjs';
 import { api } from './src/api/api.mjs';
 import { goodbye } from './src/prompts/helpers.mjs';
+import { promptDashboardGetInteractive, promptDashboardPublishInteractive } from './src/dashboards/prompts.mjs';
 
 export const rootProjectPath = process.cwd();
 export let config = null;
@@ -37,8 +38,8 @@ if (!config) {
     process.exit(1);
   }
 }
-
-export const localWidgetPath = path.join(rootProjectPath, config.widgetWorkingDirectory);
+export const localDashboardPath = path.join(rootProjectPath, config.dashboardWorkingDirectory) || 'dashboards';
+export const localWidgetPath = path.join(rootProjectPath, config.widgetWorkingDirectory) || 'widgets';
 export const scratchPath = path.join(rootProjectPath, '.bubo');
 
 export const tbHost = () => {
@@ -154,6 +155,24 @@ export async function main (answer = null) {
     try {
       delete options.push;
       await promptPublishLocalWidgets();
+    } catch (error) {
+      handlePromptError(error);
+    }
+  }
+
+  if (options.getDashboard) {
+    try {
+      delete options.getDashboard;
+      await promptDashboardGetInteractive();
+    } catch (error) {
+      handlePromptError(error);
+    }
+  }
+
+  if (options.pushDashboard) {
+    try {
+      delete options.pushDashboard;
+      await promptDashboardPublishInteractive();
     } catch (error) {
       handlePromptError(error);
     }

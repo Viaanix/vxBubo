@@ -55,17 +55,29 @@ Options:
 
 ### Menu Options
 
-- [Set ThingsBoard JWT token](#set-thingsboard-jwt-token)
-- [Create Widget](#create-widget)
-- [Get Widget(s)](#get-widgets)
-- [Publish Widgets](#publish-widgets)
-- [Publish ALL Modified Widgets](#publish-modified-widgets)
-- [Sync Widget Sources](#sync-widget-sources)
-- [Bundle Local Widget](#bundle-local-widget)
-- ~~[Data Converters](#data-converters)~~
-- ~~[Rule Chain](#rule-chain)~~
-- ~~[Dashboard](#dashboard)~~
-- ~~[Clear tokens and active widget id](#cleanup)~~
+- [vx-bubo](#vx-bubo)
+- [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [⚠️ Warning](#️-warning)
+  - [Configure](#configure)
+    - [Manual](#manual)
+  - [Using Bubo](#using-bubo)
+    - [Menu Options](#menu-options)
+      - [Set ThingsBoard JWT token](#set-thingsboard-jwt-token)
+      - [Create Widget](#create-widget)
+      - [Get Widget(s)](#get-widgets)
+      - [Publish Widgets](#publish-widgets)
+      - [Publish Multiple Widgets](#publish-multiple-widgets)
+      - [Publish Modified Widgets](#publish-modified-widgets)
+      - [Sync Widget Sources](#sync-widget-sources)
+      - [Bundle Local Widget](#bundle-local-widget)
+      - [~~Data Converters~~](#data-converters)
+      - [~~Rule Chain~~](#rule-chain)
+      - [~~Dashboard~~](#dashboard)
+      - [~~Cleanup~~](#cleanup)
+    - [Widget File Structure](#widget-file-structure)
+    - [widget.json](#widgetjson)
+    - [Ignore widget changes](#ignore-widget-changes)
 
 #### Set ThingsBoard JWT token
 
@@ -175,7 +187,7 @@ Cleanup local Bubo files.
         - 📁 headerButton
           - 📄 [Action Name].js
           - 📄 [Action Name].html
-          - 📄 [A ction Name].css
+          - 📄 [Action Name].css
           - 📄showWidgetActionFunction.js [optional]
       - 📄 [widget_fqn].js
       - 📄 [widget_fqn].html

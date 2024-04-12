@@ -49,12 +49,12 @@ const actionWriteMap = [
   },
   {
     property: 'customHtml',
-    types: ['customPretty'],
+    types: ['custom', 'customPretty'],
     extension: 'html'
   },
   {
     property: 'customCss',
-    types: ['customPretty'],
+    types: ['custom', 'customPretty'],
     extension: 'css'
   },
   {
@@ -256,9 +256,14 @@ export const deployWidgetJson = async (widgetJson) => {
  * @returns {object} - The formatted actions object.
  * @throws {Error} - If the output value is not 'write' or 'bundle'.
  */
-const processActions = async (widgetPath, widgetJson, output) => {
+export const processActions = async (widgetPath, widgetJson, output) => {
+  let actionsFormatted = {};
   // Parse the defaultConfig property of the widgetJson object into a JavaScript object
-  const actionsFormatted = JSON.parse(widgetJson.descriptor.defaultConfig);
+  if (widgetJson?.descriptor?.defaultConfig) {
+    actionsFormatted = JSON.parse(widgetJson.descriptor.defaultConfig);
+  } else {
+    actionsFormatted = widgetJson.config;
+  }
 
   // Check if the output value is valid
   if (output !== 'write' && output !== 'bundle') {
@@ -268,7 +273,6 @@ const processActions = async (widgetPath, widgetJson, output) => {
   // Determine the output type
   const isWrite = output === 'write';
   const isBundle = output === 'bundle';
-
   // Process actions if the actions property exists in the defaultConfig object
   if (actionsFormatted.actions) {
     // Iterate over each action source
@@ -276,36 +280,40 @@ const processActions = async (widgetPath, widgetJson, output) => {
       // Iterate over each action
       for (const action of data) {
         const actionPath = path.join(widgetPath, 'actions', source, action.name);
-
         // Iterate over the actionWriteMap array
-        for (const a of actionWriteMap) {
+        Promise.all(
+          actionWriteMap.map(async (a) => {
+            // for (const a of actionWriteMap) {
           // Skip if the action type is not included in the types array of the current actionWriteMap item
-          if (a?.types && !a.types.includes(action.type)) {
-            continue;
-          }
-
-          const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
-          const actionFilePath = path.join(actionPath, actionFileName);
-
-          if (isWrite) {
-            // Skip if the action object does not have a property corresponding to the current actionWriteMap item
-            if (!action[a.property]) {
-              continue;
+            if (a?.types && !a.types.includes(action.type)) {
+              console.log(action.type, 'not found in ', a.types);
+              return;
+            // continue;
             }
-            await createFile(actionFilePath, action[a.property]);
-          } else if (isBundle) {
-            let value = 'null';
-            // Check if the action file exists and read its content
-            if (await checkPath(actionFilePath)) {
-              value = await getLocalFile(actionFilePath);
+
+            const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
+            const actionFilePath = path.join(actionPath, actionFileName);
+
+            if (isWrite) {
+              // Skip if the action object does not have a property corresponding to the current actionWriteMap item
+              if (!action[a.property]) {
+                return;
+              // continue;
+              }
+              await createFile(actionFilePath, action[a.property]);
+            } else if (isBundle) {
+              let value = 'null';
+              // Check if the action file exists and read its content
+              if (await checkPath(actionFilePath)) {
+                value = await getLocalFile(actionFilePath);
+              }
+              action[a.property] = value;
             }
-            action[a.property] = value;
-          }
-        }
+          })
+        );
       }
     }
   }
-
   return actionsFormatted;
 };
 
