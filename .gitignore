@@ -27,7 +27,7 @@ node_modules/**/*
 logs/
 .bubo/*
 widgets/**/*
-dashboards/**/* 
+dashboards/**/*
 bubo.config.json
 
 # Other files
