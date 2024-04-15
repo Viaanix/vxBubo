@@ -14,7 +14,7 @@ import { clearPrevious } from './helpers.mjs';
 export const handlePromptError = (error) => {
   if (!error.message.includes('User force closed the prompt')) {
     logger.error('handlePromptError', error);
-    console.log('ERROR =>', error);
+    console.error('!!! ERROR =>', error);
   }
 };
 
@@ -153,7 +153,7 @@ export const prompForToken = async () => {
   } catch (error) {
     // Handle any errors that occur during the process
     logger.error('prompForToken Error', error);
-    console.log('prompForToken Error =>', error);
+    console.error('prompForToken Error =>', error);
   }
 
   // Return to the main function

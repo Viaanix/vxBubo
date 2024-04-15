@@ -31,6 +31,7 @@ You can manually configure bubo using the following or run `npx vx-bubo -s` fore
 ```json
 {
   "thingsBoardHost": "http://127.0.0.1:8080",
+  "dashboardWorkingDirectory": "dashboards",
   "widgetWorkingDirectory": "widgets"
 }
 ```

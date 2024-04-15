@@ -59,11 +59,19 @@ export const promptWidgetGetInteractive = async () => {
     await Promise.all(
       widgets.map((widgetId) => fetchAndParseRemoteWidget(widgetId))
     );
-    console.log(`🦉 ${chalk.bold.green('Widgets have been downloaded and ready to develop')}`);
+    buboOutput({
+      emoji: 'bubo',
+      style: 'success',
+      message: 'Widgets have been downloaded and ready to develop'
+    });
   } catch (error) {
     log.error(error);
-    console.log('error =>', error);
-    console.log(`🦉 ${chalk.bold.red('Unable to download widget')}`);
+    console.error('!!! Error =>', error);
+    buboOutput({
+      emoji: 'error',
+      style: 'error',
+      message: 'Unable to download widget'
+    });
   }
   goodbye();
 };
@@ -172,7 +180,11 @@ export const promptPublishModifiedWidgets = async (force = false) => {
   const publishWidgets = async (widgets) => {
     return await Promise.all(
       widgets.map((widget) => {
-        // console.log(`Publishing ${widget.name} ${widget.value.id}`);
+        // buboOutput({
+        //   emoji: 'bubo',
+        //   style: 'yellow',
+        //   message: `Publishing ${widget.name} ${widget.value.id}`
+        // });
         return publishLocalWidget(widget.value);
       })
     );
@@ -181,7 +193,11 @@ export const promptPublishModifiedWidgets = async (force = false) => {
   const localWidgets = await getLocalWidgetChoices();
   const modifiedWidgets = localWidgets.filter((widget) => widget?.modifiedAgo);
   if (modifiedWidgets.length === 0) {
-    console.log(chalk.yellowBright('🦉 No changes to widgets found.'));
+    buboOutput({
+      emoji: 'bubo',
+      style: 'yellow',
+      message: 'No changes to widgets found.'
+    });
     goodbye();
   }
   let answer = false;
@@ -190,13 +206,21 @@ export const promptPublishModifiedWidgets = async (force = false) => {
     const widgetList = modifiedWidgets.map((widget) => `\n- ${widget.name}`);
     answer = await confirm({ message: `Do you about to publish the following widgets? ${widgetList} \n` });
   } else {
-    console.log(buboOutput('warning', 'info', 'Force publishing all modified widgets'));
+    buboOutput({
+      emoji: 'warning',
+      style: 'info',
+      message: 'Force publishing all modified widgets'
+    });
   }
 
   if (answer || force) {
     await publishWidgets(modifiedWidgets);
   } else {
-    console.log(buboOutput('bubo', 'info', 'No widgets were published.'));
+    buboOutput({
+      emoji: 'bubo',
+      style: 'info',
+      message: 'No widgets were published.'
+    });
   }
   goodbye();
 };
@@ -226,7 +250,11 @@ export const promptPublishLocalWidgets = async () => {
   }
 
   if (!widgetChoices.length) {
-    console.log(buboOutput('warning', 'error', 'No widgets found to publish'));
+    buboOutput({
+      emoji: 'warning',
+      style: 'error',
+      message: 'No widgets found to publish'
+    });
     goodbye();
   }
 

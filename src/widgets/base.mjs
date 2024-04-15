@@ -1,12 +1,11 @@
 import path from 'path';
 import fs from 'node:fs';
 import { glob } from 'glob';
-import { checkPath, createFile, formatJson, getLocalFile, mergeDeep, validatePath } from '../utils.mjs';
+import { checkPath, createFile, formatJson, getLocalFile, mergeDeep, validatePath, buboOutput } from '../utils.mjs';
 import { localWidgetPath, scratchPath } from '../../index.mjs';
 import chalk from 'chalk';
 import { getWidgetByID, publishWidget } from './api.mjs';
 import { widgetJsonSourcePath, getWidgetLocal, getBundleAliasFromWidgetJson, guardRequireWidgetId, getAliasFromWidgetJson } from './helper.mjs';
-
 import { logger } from '../logger.mjs';
 const log = logger.child({ prefix: 'widget' });
 
@@ -177,15 +176,15 @@ export const publishLocalWidget = async (widget) => {
 export const bundleLocalWidget = async (widget) => {
   let widgetId = widget.id || null;
   const widgetPath = widget.widgetPath;
-  console.log(`widgetPath => ${widgetPath}`);
+  // console.debug(`widgetPath => ${widgetPath}`);
 
   // Get localWidgetJson
   let localWidgetJson = await getWidgetLocal(path.join(widgetPath, 'widget.json'));
-  console.log(localWidgetJson.name);
+  // console.log(localWidgetJson.name);
   if (!widget.id && widgetPath) {
     widgetId = localWidgetJson.protected.id.id;
   }
-  console.log(`widgetId => ${widgetId}`);
+  // console.log(`widgetId => ${widgetId}`);
 
   const widgetSourcePath = widgetJsonSourcePath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
@@ -235,9 +234,17 @@ export const deployWidgetJson = async (widgetJson) => {
     const request = await publishWidget(widgetJsonFormatted);
 
     if (request.status === 200) {
-      console.log(chalk.green(`🦉 Widget ${widgetJson.name} has successfully been published`));
+      buboOutput({
+        emoji: 'bubo',
+        style: 'success',
+        message: `Widget ${widgetJson.name} has successfully been published`
+      });
     } else {
-      console.log(chalk.red(`🦉 Unable to publish ${widgetJson.name}, ${request.data.message}`));
+      buboOutput({
+        emoji: 'error',
+        style: 'error',
+        message: `Unable to publish ${widgetJson.name}, ${request.data.message}`
+      });
     }
 
     return request;
@@ -286,7 +293,7 @@ export const processActions = async (widgetPath, widgetJson, output) => {
             // for (const a of actionWriteMap) {
           // Skip if the action type is not included in the types array of the current actionWriteMap item
             if (a?.types && !a.types.includes(action.type)) {
-              console.log(action.type, 'not found in ', a.types);
+              // console.log(action.type, 'not found in ', a.types);
               return;
             // continue;
             }
@@ -371,7 +378,11 @@ export const findLocalWidgetsSourceIds = async () => {
   });
 
   if (widgetFiles.length === 0) {
-    console.log('🦉 There are no widgets to sync');
+    buboOutput({
+      emoji: 'warning',
+      style: 'warning',
+      message: 'There are no widgets to sync'
+    });
     return;
   }
 

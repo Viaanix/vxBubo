@@ -17,12 +17,13 @@ export const formatJson = (data) => {
  * @param {string} message - The message to be styled.
  * @returns {string} - The styled message with the specified style applied.
  */
-export const colorize = (style, message) => {
+export const colorize = (style = 'info', message) => {
   const styles = {
     error: chalk.bold.red,
     warning: chalk.bold.yellow,
     success: chalk.bold.green,
-    info: chalk.bold.blue
+    info: chalk.bold.blue,
+    yellow: chalk.yellowBright
   };
 
   const styleFunction = styles[style];
@@ -36,7 +37,8 @@ export const colorize = (style, message) => {
  * @param {string} message - A required parameter representing the main content of the message.
  * @returns {string} - A colored and formatted message based on the provided style and message parameters.
  */
-export const buboOutput = (emoji = 'bubo', style, message) => {
+export const buboOutput = (options) => {
+  const { emoji = 'bubo', style = 'info', message } = options;
   const emojiMap = {
     bubo: '🦉',
     robot: '🤖',
@@ -48,7 +50,8 @@ export const buboOutput = (emoji = 'bubo', style, message) => {
   };
 
   const newMessage = `${emojiMap[emoji] || emojiMap.bubo} ${message}`;
-  return colorize(style, newMessage);
+  const coloredMessage = colorize(style, newMessage);
+  console.log(coloredMessage);
 };
 
 // =============================
