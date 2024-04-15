@@ -1,12 +1,11 @@
 import path from 'path';
 import fs from 'node:fs';
 import { glob } from 'glob';
-import { checkPath, createFile, formatJson, getLocalFile, mergeDeep, validatePath } from '../utils.mjs';
+import { checkPath, createFile, formatJson, getLocalFile, mergeDeep, validatePath, buboOutput } from '../utils.mjs';
 import { localWidgetPath, scratchPath } from '../../index.mjs';
 import chalk from 'chalk';
 import { getWidgetByID, publishWidget } from './api.mjs';
 import { widgetJsonSourcePath, getWidgetLocal, getBundleAliasFromWidgetJson, guardRequireWidgetId, getAliasFromWidgetJson } from './helper.mjs';
-
 import { logger } from '../logger.mjs';
 const log = logger.child({ prefix: 'widget' });
 
@@ -49,12 +48,12 @@ const actionWriteMap = [
   },
   {
     property: 'customHtml',
-    types: ['customPretty'],
+    types: ['custom', 'customPretty'],
     extension: 'html'
   },
   {
     property: 'customCss',
-    types: ['customPretty'],
+    types: ['custom', 'customPretty'],
     extension: 'css'
   },
   {
@@ -177,15 +176,15 @@ export const publishLocalWidget = async (widget) => {
 export const bundleLocalWidget = async (widget) => {
   let widgetId = widget.id || null;
   const widgetPath = widget.widgetPath;
-  console.log(`widgetPath => ${widgetPath}`);
+  // console.debug(`widgetPath => ${widgetPath}`);
 
   // Get localWidgetJson
   let localWidgetJson = await getWidgetLocal(path.join(widgetPath, 'widget.json'));
-  console.log(localWidgetJson.name);
+  // console.log(localWidgetJson.name);
   if (!widget.id && widgetPath) {
     widgetId = localWidgetJson.protected.id.id;
   }
-  console.log(`widgetId => ${widgetId}`);
+  // console.log(`widgetId => ${widgetId}`);
 
   const widgetSourcePath = widgetJsonSourcePath(widgetId);
   const widgetJsonSource = await getWidgetLocal(widgetSourcePath);
@@ -235,9 +234,17 @@ export const deployWidgetJson = async (widgetJson) => {
     const request = await publishWidget(widgetJsonFormatted);
 
     if (request.status === 200) {
-      console.log(chalk.green(`🦉 Widget ${widgetJson.name} has successfully been published`));
+      buboOutput({
+        emoji: 'bubo',
+        style: 'success',
+        message: `Widget ${widgetJson.name} has successfully been published`
+      });
     } else {
-      console.log(chalk.red(`🦉 Unable to publish ${widgetJson.name}, ${request.data.message}`));
+      buboOutput({
+        emoji: 'error',
+        style: 'error',
+        message: `Unable to publish ${widgetJson.name}, ${request.data.message}`
+      });
     }
 
     return request;
@@ -256,9 +263,14 @@ export const deployWidgetJson = async (widgetJson) => {
  * @returns {object} - The formatted actions object.
  * @throws {Error} - If the output value is not 'write' or 'bundle'.
  */
-const processActions = async (widgetPath, widgetJson, output) => {
+export const processActions = async (widgetPath, widgetJson, output) => {
+  let actionsFormatted = {};
   // Parse the defaultConfig property of the widgetJson object into a JavaScript object
-  const actionsFormatted = JSON.parse(widgetJson.descriptor.defaultConfig);
+  if (widgetJson?.descriptor?.defaultConfig) {
+    actionsFormatted = JSON.parse(widgetJson.descriptor.defaultConfig);
+  } else {
+    actionsFormatted = widgetJson.config;
+  }
 
   // Check if the output value is valid
   if (output !== 'write' && output !== 'bundle') {
@@ -268,7 +280,6 @@ const processActions = async (widgetPath, widgetJson, output) => {
   // Determine the output type
   const isWrite = output === 'write';
   const isBundle = output === 'bundle';
-
   // Process actions if the actions property exists in the defaultConfig object
   if (actionsFormatted.actions) {
     // Iterate over each action source
@@ -276,36 +287,40 @@ const processActions = async (widgetPath, widgetJson, output) => {
       // Iterate over each action
       for (const action of data) {
         const actionPath = path.join(widgetPath, 'actions', source, action.name);
-
         // Iterate over the actionWriteMap array
-        for (const a of actionWriteMap) {
+        Promise.all(
+          actionWriteMap.map(async (a) => {
+            // for (const a of actionWriteMap) {
           // Skip if the action type is not included in the types array of the current actionWriteMap item
-          if (a?.types && !a.types.includes(action.type)) {
-            continue;
-          }
-
-          const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
-          const actionFilePath = path.join(actionPath, actionFileName);
-
-          if (isWrite) {
-            // Skip if the action object does not have a property corresponding to the current actionWriteMap item
-            if (!action[a.property]) {
-              continue;
+            if (a?.types && !a.types.includes(action.type)) {
+              // console.log(action.type, 'not found in ', a.types);
+              return;
+            // continue;
             }
-            await createFile(actionFilePath, action[a.property]);
-          } else if (isBundle) {
-            let value = 'null';
-            // Check if the action file exists and read its content
-            if (await checkPath(actionFilePath)) {
-              value = await getLocalFile(actionFilePath);
+
+            const actionFileName = `${a?.name ? a.name : action.name}.${a.extension}`;
+            const actionFilePath = path.join(actionPath, actionFileName);
+
+            if (isWrite) {
+              // Skip if the action object does not have a property corresponding to the current actionWriteMap item
+              if (!action[a.property]) {
+                return;
+              // continue;
+              }
+              await createFile(actionFilePath, action[a.property]);
+            } else if (isBundle) {
+              let value = 'null';
+              // Check if the action file exists and read its content
+              if (await checkPath(actionFilePath)) {
+                value = await getLocalFile(actionFilePath);
+              }
+              action[a.property] = value;
             }
-            action[a.property] = value;
-          }
-        }
+          })
+        );
       }
     }
   }
-
   return actionsFormatted;
 };
 
@@ -363,7 +378,11 @@ export const findLocalWidgetsSourceIds = async () => {
   });
 
   if (widgetFiles.length === 0) {
-    console.log('🦉 There are no widgets to sync');
+    buboOutput({
+      emoji: 'warning',
+      style: 'warning',
+      message: 'There are no widgets to sync'
+    });
     return;
   }
 

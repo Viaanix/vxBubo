@@ -14,7 +14,7 @@ import { clearPrevious } from './helpers.mjs';
 export const handlePromptError = (error) => {
   if (!error.message.includes('User force closed the prompt')) {
     logger.error('handlePromptError', error);
-    console.log('ERROR =>', error);
+    console.error('!!! ERROR =>', error);
   }
 };
 
@@ -36,6 +36,18 @@ export const promptMainMenu = async () => {
       value: 'token',
       description: '🎟️ Set ThingsBoard JWT tokend',
       disabled: disableHost
+    },
+    {
+      name: 'Get Dashboard',
+      value: 'getDashboard',
+      description: 'Download a dashboard from ThingsBoard',
+      disabled: (disableHost || disableToken)
+    },
+    {
+      name: 'Publish Dashboard',
+      value: 'pushDashboard',
+      description: 'Publish a dashboard to ThingsBoard',
+      disabled: (disableHost || disableToken)
     },
     {
       name: 'Create Widget',
@@ -141,7 +153,7 @@ export const prompForToken = async () => {
   } catch (error) {
     // Handle any errors that occur during the process
     logger.error('prompForToken Error', error);
-    console.log('prompForToken Error =>', error);
+    console.error('prompForToken Error =>', error);
   }
 
   // Return to the main function

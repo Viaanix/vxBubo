@@ -21,7 +21,10 @@ export const clearPrevious = { clearPromptOnDone: true };
  * Logs a success message and exits the process.
  */
 export const goodbye = () => {
-  const message = buboOutput('bubo', 'success', 'Goodbye!');
-  console.log(message);
+  buboOutput({
+    emoji: 'bubo',
+    style: 'success',
+    message: 'Goodbye!'
+  });
   process.exit(1);
 };

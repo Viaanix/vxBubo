@@ -14,7 +14,7 @@ export const logger = winston.createLogger({
 });
 
 export const devLogging = () => {
-  console.log('devLogging');
+  console.debug('devLogging');
   // console.log(colorize('info', 'devLogging'));
   // logger.add(new winston.transports.File({
   //   filename: '.bubo/logs/info.log',
