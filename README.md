@@ -74,7 +74,7 @@ Options:
       - [Bundle Local Widget](#bundle-local-widget)
       - [~~Data Converters~~](#data-converters)
       - [~~Rule Chain~~](#rule-chain)
-      - [~~Dashboard~~](#dashboard)
+      - [Dashboard](#dashboard)
       - [~~Cleanup~~](#cleanup)
     - [Widget File Structure](#widget-file-structure)
     - [widget.json](#widgetjson)
@@ -164,9 +164,8 @@ Bubo will look for any widget that has a modification after the last published t
 
 `Currently not implemented.`
 
-#### ~~Dashboard~~
-
-`Currently not implemented.`
+#### Dashboard
+`This is currently in testing, the most basic version is implemented. You can only publish the last specifed dashboardId.`
 
 #### ~~Cleanup~~
 

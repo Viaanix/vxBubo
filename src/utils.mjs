@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { dashboardJsonSourcePath } from './dashboards/helper.mjs';
 import { widgetJsonSourcePath } from './widgets/helper.mjs';
 
-const log = logger.child({ prefix: 'utils' });
+// const log = logger.child({ prefix: 'utils' });
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);

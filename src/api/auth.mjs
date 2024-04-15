@@ -15,7 +15,7 @@ export const parseJwt = (token) => {
   const cleanedToken = token.replace(/^Bearer\s+/i, '').trim();
 
   // Split the token into three parts (header, payload, signature)
-  const [header, payload] = cleanedToken.split('.');
+  const payload = cleanedToken.split('.');
 
   // Decode the payload from base64 and parse it as JSON
   const decodedPayload = JSON.parse(atob(payload));
