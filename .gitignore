@@ -24,6 +24,11 @@ node_modules/**/*
 
 # Package
 .env
-.bubo/
-widgets/
+logs/
+.bubo/*
+widgets/**/*
+dashboards/**/*
 bubo.config.json
+
+# Other files
+.DS_Store

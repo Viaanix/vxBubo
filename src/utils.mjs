@@ -1,196 +1,172 @@
 import path from 'path';
 import fs from 'fs';
-import localStorage, { getRefreshToken, getToken } from './session.mjs';
-import { tbHost, scratchPath, localWidgetPath } from '../index.mjs';
+import { logger } from './logger.mjs';
+import chalk from 'chalk';
+import { dashboardJsonSourcePath } from './dashboards/helper.mjs';
+import { widgetJsonSourcePath } from './widgets/helper.mjs';
 
-export const authHeaders = (token) => {
-  return {
-    headers: {
-      Authorization: token || getToken()
-    }
-  };
-};
-
-export const fetchHandler = async (url, params = {}) => {
-  // Check if the token is expired or will expire soon refresh token.
-  if (isTokenExpired()) {
-    console.log('Token is expired, refreshing..');
-    await refreshToken();
-  }
-  // TODO : Improve this.
-  const auth = authHeaders();
-  if (params?.headers) {
-    params.headers = { ...auth.headers, ...params?.headers };
-  } else {
-    params.headers = { ...auth.headers };
-  }
-  return await fetch(url, { ...params });
-};
-
-export const parseJwt = (token) => {
-  return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-};
-
-const getParsedToken = (token) => {
-  token = token || getToken();
-  return parseJwt(token.replace('Bearer', '').trim());
-};
-
-export const isTokenExpired = () => {
-  const parsedToken = getParsedToken();
-  // Fudge factor, will it expire in 5 minutes ?
-  const fudge = 5 * 60;
-  return (Math.round(Date.now() / 1000) + fudge) > parsedToken.exp;
-};
-
-export const refreshToken = async () => {
-  console.log('refreshing token...');
-  const params = {
-    headers: {
-      Authorization: getToken(),
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      refreshToken: getRefreshToken()
-    })
-  };
-  const request = await fetch(`${tbHost()}/api/auth/token`, { ...params });
-  if (request.status === 200) {
-    const response = await request.json();
-    if (response.token) {
-      localStorage.setItem('token', `Bearer ${response.token}`);
-    }
-    if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
-    }
-  }
-  return getToken();
-};
-
-export const getUserRefreshToken = async () => {
-  const parsedToken = getParsedToken();
-  const tokenRequest = await fetch(`${tbHost()}/api/user/${parsedToken.userId}/token`, { ...authHeaders() });
-  const tokenResponse = await tokenRequest.json();
-  if (tokenResponse.refreshToken) {
-    localStorage.setItem('refreshToken', tokenResponse.refreshToken);
-  }
-};
-
-// TODO: rename
-export const validToken = async (token) => {
-  token = token || getToken();
-  if (!token || !tbHost()) {
-    console.debug('No Token');
-    return false;
-  }
-  const request = await fetch(`${tbHost()}/api/auth/user`, { ...authHeaders(token) });
-  const response = await request.json();
-  if (request.status !== 200) {
-    console.log('testToken Failed =>', request.status, response.message);
-    // TODO: Abstract this away, no localStorage direct calls
-    // Attempt to refresh token
-    token = await refreshToken();
-    return token !== null;
-  }
-  return request.status === 200;
-};
+// const log = logger.child({ prefix: 'utils' });
 
 export const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
+};
+
+/**
+ * Applies a specified style to a given message.
+ * @param {string} style - The style to apply to the message. Can be one of: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - The message to be styled.
+ * @returns {string} - The styled message with the specified style applied.
+ */
+export const colorize = (style = 'info', message) => {
+  const styles = {
+    error: chalk.bold.red,
+    warning: chalk.bold.yellow,
+    success: chalk.bold.green,
+    info: chalk.bold.blue,
+    yellow: chalk.yellowBright
+  };
+
+  const styleFunction = styles[style];
+  return styleFunction(message);
+};
+
+/**
+ * Returns a colored and formatted message based on the provided parameters.
+ * @param {string} emoji - An optional parameter representing an emoji to be added to the message.
+ * @param {string} style - A required parameter representing the style of the message. It can be one of the following: 'error', 'warning', 'success', or 'info'.
+ * @param {string} message - A required parameter representing the main content of the message.
+ * @returns {string} - A colored and formatted message based on the provided style and message parameters.
+ */
+export const buboOutput = (options) => {
+  const { emoji = 'bubo', style = 'info', message } = options;
+  const emojiMap = {
+    bubo: '🦉',
+    robot: '🤖',
+    warning: '⚠️',
+    rocket: '🚀',
+    error: '❌',
+    success: '✅',
+    info: 'ℹ️'
+  };
+
+  const newMessage = `${emojiMap[emoji] || emojiMap.bubo} ${message}`;
+  const coloredMessage = colorize(style, newMessage);
+  console.log(coloredMessage);
 };
 
 // =============================
 // Filesystem Utils
 // =============================
 
+/**
+ * Checks if a directory exists at the specified path.
+ * @param {string} dir - The path of the directory to be checked.
+ * @returns {Promise<boolean>} - Returns true if the directory exists, false otherwise.
+ */
 export const checkPath = async (dir) => {
   return fs.existsSync(dir);
 };
 
-// TODO: Update name
-export const validatePath = async (dirname) => {
-  if (!await checkPath(dirname)) {
-    fs.mkdirSync(dirname, { recursive: true });
-    console.debug(`Cannot find ${dirname}, creating it.`);
-  }
-};
-
+/**
+ * Creates a file at the specified path and writes data to it.
+ * If the data parameter is an object, it is converted to JSON format.
+ * The function also validates the path before creating the file.
+ * @param {string} filePath - The path where the file should be created.
+ * @param {*} data - The data to be written to the file.
+ * @throws {Error} - If an error occurs during the file creation process.
+ */
 export const createFile = async (filePath, data) => {
-  // Validate path before creating a file
-  await validatePath(path.dirname(filePath));
+  if (typeof data === 'object') {
+    data = JSON.stringify(data);
+  }
+
+  const directoryPath = path.dirname(filePath);
+  await validatePath(directoryPath);
+
   try {
-    fs.writeFileSync(filePath, data);
+    return fs.writeFileSync(filePath, data);
   } catch (error) {
+    console.error('createFile => ', error);
     throw new Error(error);
   }
 };
 
+/**
+ * Validates the path and creates the directory if it doesn't exist.
+ * @param {string} directoryPath - The path of the directory to validate.
+ */
+export const validatePath = async (directoryPath) => {
+  if (!fs.existsSync(directoryPath)) {
+    fs.mkdirSync(directoryPath, { recursive: true });
+  }
+};
+
+/**
+ * Reads the contents of a file specified by the filePath parameter.
+ * If the file is not found or there is an error reading it, an error is logged and an exception is thrown.
+ * @param {string} filePath - The path to the file to be read.
+ * @returns {Promise<string>} - The contents of the file specified by filePath.
+ */
 export const getLocalFile = async (filePath) => {
-  let fileRaw;
+  const childLogger = logger.child({ prefix: 'utils' });
+
   try {
-    fileRaw = fs.readFileSync(filePath, 'utf8');
+    const fileRaw = fs.readFileSync(filePath, 'utf8');
+    return fileRaw;
   } catch (error) {
-    console.error(error);
+    childLogger.error('getLocalFile =>', error);
     throw new Error(error);
   }
-  return fileRaw;
 };
 
-export const getWidgetLocal = async (widgetPath) => {
-  const widgetJsonRaw = await getLocalFile(widgetPath);
-  return JSON.parse(widgetJsonRaw);
-};
+/**
+ * Performs a deep merge of an array of objects
+ * @author inspired by [jhildenbiddle](https://stackoverflow.com/a/48218209).
+ * @param {...Object} objects - An array of objects to be merged
+ * @returns {Object} - A new object that is a deep merge of all the input objects
+ */
+export function mergeDeep (...objects) {
+  const isObject = (obj) => obj && typeof obj === 'object' && !(obj instanceof Array);
+  const filteredObjects = objects.filter(isObject);
 
-export const discoverLocalWidgetJsons = async () => {
-  const widgetJsonDir = path.join(scratchPath, 'widgets');
-  const localWidgets = [];
+  if (filteredObjects.length !== objects.length) {
+    throw new Error('Can only merge objects');
+  }
 
-  await Promise.all(
-    fs.readdirSync(widgetJsonDir).map(async (file) => {
-      if (!file.includes('bak')) {
-        const fileExt = path.extname(file);
-        const widgetJsonPath = path.join(widgetJsonDir, file);
+  const target = {};
 
-        if (fileExt === '.json') {
-          const widgetJson = await getWidgetLocal(widgetJsonPath);
-          const widgetPath = path.join(localWidgetPath, widgetJson.name);
-          const stats = fs.statSync(widgetJsonPath);
-          const payload = {
-            name: widgetJson.name,
-            id: file.split('.')[0],
-            jsonPath: widgetJsonPath,
-            widgetPath,
-            modified: stats.mtime
-          };
-          localWidgets.push(payload);
-        }
+  objects.forEach(source => {
+    for (const key in source) {
+      const targetValue = target[key];
+      const sourceValue = source[key];
+      const isTargetArray = Array.isArray(targetValue);
+      const isSourceArray = Array.isArray(sourceValue);
+
+      if (isTargetArray && isSourceArray) {
+        target[key] = targetValue.concat(sourceValue);
+      } else if (isObject(targetValue) && isObject(sourceValue)) {
+        target[key] = mergeDeep({ ...targetValue }, sourceValue);
+      } else {
+        Object.assign(target, { [key]: sourceValue });
       }
-    })
-  );
-  return localWidgets;
-};
+    }
+  });
 
-export const findLocalWidgetsWithModifiedAssets = async () => {
-  const localWidgets = await discoverLocalWidgetJsons();
+  return target;
+}
 
-  return await Promise.all(
-    localWidgets.map(async (widget) => {
-      const widgetPath = path.join(localWidgetPath, widget.name);
-      if (await checkPath(widgetPath)) {
-        const widgetFiles = await fs.readdirSync(widgetPath, { recursive: true });
-
-        for (const widgetAsset of widgetFiles) {
-          const widgetAssetPath = path.join(widgetPath, widgetAsset);
-          const stats = fs.statSync(widgetAssetPath);
-
-          if (stats.mtime > widget.modified) {
-            if (stats.mtime > widget.assetsModified || !widget.assetsModified) widget.assetsModified = stats.mtime;
-          }
-        }
-      }
-      return widget;
-    })
-  );
+export const getScratchFile = async (type, id) => {
+  let path = null;
+  if (type === 'dashboard') {
+    path = dashboardJsonSourcePath(id);
+  } else if (type === 'widget') {
+    path = widgetJsonSourcePath(id);
+  }
+  try {
+    const jsonRaw = await getLocalFile(path);
+    return JSON.parse(jsonRaw);
+  } catch (error) {
+    console.error(`Error retrieving JSON file: ${error}`);
+    throw error;
+  }
 };
