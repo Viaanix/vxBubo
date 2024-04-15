@@ -1,4 +1,4 @@
-import { Separator } from '@inquirer/prompts';
+import { Separator } from '@inquirer/core';
 import { buboOutput, colorize } from '../utils.mjs';
 
 /**

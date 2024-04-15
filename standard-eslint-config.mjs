@@ -3,8 +3,8 @@
 
 import globals from 'globals';
 import pluginN from 'eslint-plugin-n';
-import * as pluginImport from 'eslint-plugin-import';
-import pluginPromise from 'eslint-plugin-promise';
+// import * as pluginImport from 'eslint-plugin-import'; // No support for eslint Flat Config
+// import pluginPromise from 'eslint-plugin-promise'; // No support for eslint Flat Config
 
 const config = {
   languageOptions: {
@@ -27,9 +27,9 @@ const config = {
   },
 
   plugins: {
-    n: pluginN,
-    promise: pluginPromise,
-    import: pluginImport
+    n: pluginN
+    // promise: pluginPromise,
+    // import: pluginImport
   },
 
   rules: {
@@ -312,8 +312,35 @@ const config = {
     'valid-typeof': ['error', { requireStringLiterals: true }],
     'wrap-iife': ['error', 'any', { functionPrototypeMethods: true }],
     'yield-star-spacing': ['error', 'both'],
-    yoda: ['error', 'never'],
+    yoda: ['error', 'never']
+  }
+};
 
+// If plugin `eslint-plugin-n` has been declared, add its rules
+if (config.plugins?.n) {
+  const nRules = {
+    'n/handle-callback-err': ['error', '^(err|error)$'],
+    'n/no-callback-literal': 'error',
+    'n/no-deprecated-api': 'error',
+    'n/no-exports-assign': 'error',
+    'n/no-new-require': 'error',
+    'n/no-path-concat': 'error',
+    'n/process-exit-as-throw': 'error'
+  };
+  config.rules = { ...config.rules, ...nRules };
+}
+
+// If plugin `eslint-plugin-promise` has been declared, add its rules
+if (config.plugins?.promise) {
+  const promiseRules = {
+    'promise/param-names': 'error'
+  };
+  config.rules = { ...config.rules, ...promiseRules };
+}
+
+// If plugin `eslint-plugin-import` has been declared, add its rules
+if (config.plugins?.import) {
+  const importRules = {
     'import/export': 'error',
     'import/first': 'error',
     'import/no-absolute-path': ['error', {
@@ -323,18 +350,9 @@ const config = {
     }],
     'import/no-duplicates': 'error',
     'import/no-named-default': 'error',
-    'import/no-webpack-loader-syntax': 'error',
-
-    'n/handle-callback-err': ['error', '^(err|error)$'],
-    'n/no-callback-literal': 'error',
-    'n/no-deprecated-api': 'error',
-    'n/no-exports-assign': 'error',
-    'n/no-new-require': 'error',
-    'n/no-path-concat': 'error',
-    'n/process-exit-as-throw': 'error',
-
-    'promise/param-names': 'error'
-  }
-};
+    'import/no-webpack-loader-syntax': 'error'
+  };
+  config.rules = { ...config.rules, ...importRules };
+}
 
 export default config;

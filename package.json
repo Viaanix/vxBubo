@@ -1,7 +1,7 @@
 {
   "name": "vx-bubo",
   "version": "0.2.0",
-  "description": "Your guide to develop Thingsboard Widgets locally",
+  "description": "Your guide to develop Thingsboard locally",
   "type": "module",
   "main": "index.mjs",
   "bin": {
@@ -41,7 +41,7 @@
   "devDependencies": {
     "axios-mock-adapter": "^1.22.0",
     "eslint": "^9.0.0",
-    "eslint-config-standard": "^17.1.0",
-    "eslint-plugin-import": "^2.29.1"
+    "eslint-plugin-n": "^17.2.1",
+    "globals": "^15.0.0"
   }
 }
